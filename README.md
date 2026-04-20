@@ -237,12 +237,8 @@ Restart Claude Code. The statusline is gone.
 
 ---
 
-## Author
-
-Maintained by Jochen Meyer. You can find me on [X / @okay_not_cool](https://x.com/okay_not_cool).
-
 ## License
 
 MIT. See [LICENSE](LICENSE).
 
-Sponsored by [okay.cool](https://okay.cool) · [verymatcha.de](https://verymatcha.de) · [oelea.de](https://oelea.de)
+Author Jochen Meyer (X → [@okay_not_cool](https://x.com/okay_not_cool)) ▸ Sponsored by [okay.cool](https://okay.cool) · [verymatcha.de](https://verymatcha.de) · [oelea.de](https://oelea.de)
