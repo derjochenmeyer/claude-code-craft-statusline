@@ -91,20 +91,22 @@ Sonnet 4.6▸normal │ main ✔ │ ctx▸30% │ 5h▸29% │ 7d▸30% │ cos
 
 An `⬆ vX.Y.Z` badge appears automatically when a newer version of the repo is available (checked at most once per 24h, non-blocking background fetch).
 
-Git branch symbols (appended inside the branch badge):
+Git branch badge variants (the badge itself is a colored box in the terminal):
 
-| Symbol | Meaning |
-|--------|---------|
-| `✔`    | Clean working tree |
-| `⇡N`   | N commits ahead of remote (unpushed) |
-| `⇣N`   | N commits behind remote (remote has moved) |
-| `*N`   | N stashed changesets |
-| `+N`   | N staged files ready to commit |
-| `!N`   | N unstaged modifications |
-| `?N`   | N untracked files |
-| `⚠N`   | N merge conflicts |
+| Badge | Meaning |
+|---|---|
+| `main ✔` | Clean working tree — nothing to commit. |
+| `main ⇡2` | 2 commits ahead of remote, not yet pushed. |
+| `main ⇣1` | 1 commit behind remote, pull before pushing. |
+| `main ⇡1 ⇣1` | Diverged — local and remote both moved on. |
+| `main +1` | 1 file staged, ready to commit. |
+| `main !1` | 1 file modified but not yet staged. |
+| `main ?1` | 1 new file not yet tracked. |
+| `main *1` | 1 stash put aside. |
+| `main +1 !1 ?1` | Typical work-in-progress state. |
+| `main ⚠1` | Merge conflict — must be resolved. |
 
-Symbols combine (e.g. `main ⇡2 +1 !3 ?1`). The badge color stays readable on dark and light terminals.
+Symbols combine. Legend: `✔` clean · `⇡N` ahead · `⇣N` behind · `*N` stash · `+N` staged · `!N` unstaged · `?N` untracked · `⚠N` conflicts.
 
 Custom fields from `~/.claude/craft-statusline-custom.sh` render after the built-ins. See the README for the authoring pattern.
 
