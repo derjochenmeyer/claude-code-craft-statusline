@@ -355,28 +355,34 @@ if [[ "$SHOW_ACTIVITY" == "true" && -n "${session_file:-}" ]]; then
   act_mtime=$(stat -c %Y "$session_file" 2>/dev/null || stat -f %m "$session_file" 2>/dev/null || echo 0)
   act_idle=$(( $(date +%s) - act_mtime ))
   if (( act_idle >= 0 && act_idle < ACTIVITY_LIVE_WINDOW_SECS )); then
-    # Examine only the very last line of the transcript, not the most
-    # recent tool_use anywhere in history. Once a tool finishes and
-    # Claude starts streaming its reply, the LATEST event is the new
-    # assistant text, not the prior tool_use. Reading the last line
-    # keeps the signal truthful:
-    #   assistant, last content block is tool_use  -> executing
-    #   assistant, last content block is text      -> thinking
-    #   user (usually a tool_result)               -> thinking
-    last_tool=$(tail -1 "$session_file" 2>/dev/null | "$JQ" -r '
-      if .type == "assistant" and (.message.content | type) == "array" and (.message.content | length) > 0 then
-        .message.content[-1] as $last
-        | if ($last.type // empty) == "tool_use" and ($last.name | type) == "string" then $last.name
+    # Examine only the very last line of the transcript. A fresh mtime
+    # alone is not enough — Claude Code also writes the transcript on
+    # turn-end, so "recently modified" can mean "just finished" rather
+    # than "still working". stop_reason disambiguates:
+    #   assistant + stop_reason in {end_turn,max_tokens,...}  -> done, no indicator
+    #   assistant + stop_reason == "tool_use"                 -> executing (tool)
+    #   assistant + no stop_reason yet                        -> streaming, thinking
+    #   user (usually a tool_result)                          -> thinking
+    last_tool=$("$JQ" -r '
+      if .type == "assistant" then
+        (.message.stop_reason // null) as $sr
+        | if $sr != null and $sr != "tool_use" then "DONE"
+          elif (.message.content | type) == "array" and (.message.content | length) > 0 then
+            .message.content[-1] as $last
+            | if ($last.type // empty) == "tool_use" and ($last.name | type) == "string" then $last.name
+              else "" end
           else "" end
       else "" end
-    ' 2>/dev/null)
+    ' <(tail -1 "$session_file" 2>/dev/null) 2>/dev/null)
     # Whitelist the tool name so a pathological entry cannot reach printf %b
-    if [[ ${#last_tool} -gt $MAX_ACTIVITY_LEN || ! "$last_tool" =~ ^[A-Za-z0-9_.-]+$ ]]; then
+    if [[ "$last_tool" != "DONE" ]] && [[ ${#last_tool} -gt $MAX_ACTIVITY_LEN || ! "$last_tool" =~ ^[A-Za-z0-9_.-]*$ ]]; then
       last_tool=""
     fi
     # Dot + state label share the activity color; the tool name in
     # parens stays dim as a secondary detail.
     case "${last_tool:-}" in
+      DONE)
+        ;;
       "")
         parts+=("${activity_think}● thinking${rst}")
         ;;
