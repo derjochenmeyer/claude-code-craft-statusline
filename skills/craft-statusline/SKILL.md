@@ -1,6 +1,6 @@
 ---
 name: craft-statusline
-version: 1.0.0
+version: 1.1.0
 description: Configure the craft status bar. Shows annotated field preview, detects existing setup, and auto-installs or auto-activates if needed, all in one response. Asks only when another statusline script would be replaced (destructive case).
 allowed-tools: Read, Write, Bash
 ---

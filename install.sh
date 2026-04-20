@@ -2,7 +2,7 @@
 # claude-code-craft-statusline installer
 # https://github.com/derjochenmeyer/claude-code-craft-statusline
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 GITHUB_REPO="derjochenmeyer/claude-code-craft-statusline"
 GITHUB_RAW="https://raw.githubusercontent.com/$GITHUB_REPO/main"
 SKILLS_DIR="$HOME/.claude/skills"

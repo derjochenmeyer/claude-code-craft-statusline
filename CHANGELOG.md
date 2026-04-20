@@ -3,6 +3,23 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.1.0] -- 2026-04-20
+
+### Added
+- **State-aware branch badge palette.** The branch field now colors itself by the dominant git signal instead of a single blue. Priority (blocking first): conflict (red) > diverged (coral) > behind (azure) > combined (coral) > ahead (amber) > unstaged (amber) > staged (green) > untracked (slate) > stashed (violet) > clean (green).
+
+### Fixed
+- **Activity indicator no longer sticks on `thinking` after turn-end.** The decoder now reads `stop_reason` on the most recent assistant event in the transcript (walking back past Claude Code's post-turn metadata like `attachment`, `file-history-snapshot`, `custom-title`), so `end_turn`, `max_tokens`, and friends correctly suppress the indicator. The earlier "read last line only" fix missed because the last line is usually metadata, not the assistant message.
+- **`stat` flag ordering** on Linux-first detection for the version-check cache (GNU `stat -f` silently returned a mount-point string that parsed as invalid number).
+
+### Changed
+- **Removed the `SHOW_EMOJI` flag.** `ctx▸` has been the default since v1.0.0 and aligned with `5h▸`/`7d▸`/`cost▸`; the legacy `✍️` opt-in path is gone. One fewer knob, one fewer edge case.
+- **Author line collapsed** into the single sponsor line in README.
+- **Preview screenshot** now links from a GitHub issue attachment instead of shipping `assets/statusline.png` in the repo.
+
+### Docs
+- **SKILL.md**: git symbol reference table added for `/craft-statusline` output.
+
 ## [1.0.0] -- 2026-04-20
 
 Initial release. A bash statusline for Claude Code with minimal dependencies (bash + jq), delivered via a pipeable installer with SHA256-verified binaries and an opt-out flag for anyone who prefers manual inspection.

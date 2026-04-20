@@ -13,7 +13,7 @@
 #   --version   print version and exit
 #   --doctor    run environment checks and exit
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 # ── Configuration ────────────────────────────────────────────────
 SHOW_MODEL=true
