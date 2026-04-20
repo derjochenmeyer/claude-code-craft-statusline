@@ -6,7 +6,7 @@ A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code
 
 No Node, no Python, no Nerd Fonts. Only requires jq (small command-line JSON parser, auto-installed during setup).
 
-![claude-code-craft-statusline preview](assets/statusline.png)
+![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/0487ecb3-5e0d-4e8f-8df5-7a5aef237c90)
 
 Colors shift as context and rate limits climb: green under 50%, yellow under 70%, orange under 85%, red above. At `CONTEXT_ALERT_AT` (default 85%) a red `⚠` appears next to the context percentage. Session cost is off by default, and stays that way for flat-rate plans where it would be misleading.
 
