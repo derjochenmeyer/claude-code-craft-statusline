@@ -91,6 +91,21 @@ Sonnet 4.6▸normal │ main ✔ │ ctx▸30% │ 5h▸29% │ 7d▸30% │ cos
 
 An `⬆ vX.Y.Z` badge appears automatically when a newer version of the repo is available (checked at most once per 24h, non-blocking background fetch).
 
+Git branch symbols (appended inside the branch badge):
+
+| Symbol | Meaning |
+|--------|---------|
+| `✔`    | Clean working tree |
+| `⇡N`   | N commits ahead of remote (unpushed) |
+| `⇣N`   | N commits behind remote (remote has moved) |
+| `*N`   | N stashed changesets |
+| `+N`   | N staged files ready to commit |
+| `!N`   | N unstaged modifications |
+| `?N`   | N untracked files |
+| `⚠N`   | N merge conflicts |
+
+Symbols combine (e.g. `main ⇡2 +1 !3 ?1`). The badge color stays readable on dark and light terminals.
+
 Custom fields from `~/.claude/craft-statusline-custom.sh` render after the built-ins. See the README for the authoring pattern.
 
 Then act based on state:
