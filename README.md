@@ -105,6 +105,10 @@ If you are on **Pro, Team, or Max** (flat monthly subscription), `cost` is off b
 
 ### Git branch at a glance
 
+Since v1.1.0 the branch badge is also color-aware: it picks its color from the dominant git signal, so you can read the state of the working tree at a glance without parsing the symbols.
+
+![git state badges](https://github.com/user-attachments/assets/4887886c-609b-4bf0-bcac-d4a31c6bc5ba)
+
 | Symbol | Meaning | Why it matters |
 |--------|---------|----------------|
 | `✔` | Clean working tree | Nothing uncommitted, safe to switch context or wrap up the session |
