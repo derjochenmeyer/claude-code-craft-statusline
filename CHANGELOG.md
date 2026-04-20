@@ -1,0 +1,43 @@
+# Changelog
+
+All notable changes to this project are documented here.
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+
+## [1.0.0] -- 2026-04-20
+
+Initial release. A bash statusline for Claude Code with minimal dependencies (bash + jq), delivered via a pipeable installer with SHA256-verified binaries and an opt-out flag for anyone who prefers manual inspection.
+
+### Fields
+
+- **Model + effort**: current model (shortened, parenthesized variants stripped) with inline effort badge read from `~/.claude/settings.json`.
+- **Git branch**: badge with branch name and status symbols for ahead/behind, staged, unstaged, untracked, stashed, conflicts.
+- **Context**: percentage used plus session duration, colored by threshold, with a red `⚠` badge when usage crosses `CONTEXT_ALERT_AT` (default 85%).
+- **Rate limits**: rolling 5-hour and 7-day token windows, colored by threshold.
+- **Session cost** (off by default): running total in USD. Explicit "API billing only" framing since the number is meaningless on flat-rate plans (Pro, Team, Max).
+- **Activity indicator**: hook-free, driven by the active session transcript. Shows `● thinking` while Claude is generating text, `● executing (Tool)` while a concrete tool is running, or `● researching` when a subagent has been dispatched. Disappears when the transcript has been idle for 10 seconds. No hooks written to `settings.json`, no helper script, no state file outside the transcript itself.
+- **Update checker**: `⬆ vX.Y.Z` badge appears when a newer release is published. Non-blocking background fetch, at most once per 24 hours, 3-second timeout.
+- **Custom fields** via `~/.claude/craft-statusline-custom.sh`: user-authored shell functions whose output is appended after the built-ins. The file is sourced (never eval'd), function names are whitelisted to `^field_[A-Za-z0-9_]+$`, and each call runs under a 2-second timeout.
+
+### Security
+
+- jq pinned to a specific version with SHA256 checksums hardcoded in `install.sh`, not fetched from the same host as the binary. Closes the bootstrap tautology where a compromised release channel would publish both the malicious binary and a matching manifest.
+- Downloaded binaries go through an atomic tmpfile + verify + mv pattern.
+- Downloaded shell scripts are shebang-validated; markdown payloads are rejected when they look like an HTML error page.
+- `com.apple.quarantine` stripped from the jq binary on macOS so Gatekeeper does not silently block it.
+- Whitelist validation plus explicit length caps on every user-influenced value that reaches `printf %b`, closing an ANSI/escape-injection vector via manipulated JSON.
+- Explicit jq type-checks when extracting strings so nested objects cannot propagate through the rendering pipeline.
+
+### Robustness
+
+- Wizard applies `SHOW_*` edits to a tmp copy, validates with `bash -n`, then atomically swaps via `mv`. A failing sed cannot leave the live script half-rewritten.
+- Installer backs up any existing `~/.claude/craft-statusline.sh` before overwriting and refuses to replace a user-customized (non-symlink) file at `~/.claude/commands/craft-statusline.md`.
+- Session duration falls back to mtime when birthtime is not tracked by the filesystem (ext4).
+- Invalid JSON in `~/.claude/settings.json` is reported explicitly instead of silently falling through.
+
+### Tooling and docs
+
+- `--version` on renderer, wizard, and installer.
+- `--doctor` diagnostic reports bash, jq, git, settings.json state (including `refreshInterval`), install locations, custom fields file presence, and the update check cache age.
+- bats-core test suite covering render output, color thresholds, injection defense, activity detection, custom-field isolation, rendertime caps, update-check behavior, and install-flag consistency.
+- GitHub Actions: shellcheck on the three shell scripts, bats on Ubuntu and macOS.
+- `SECURITY.md`, `CONTRIBUTING.md`, bug report template.

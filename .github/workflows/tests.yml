@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bats:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats-core
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install bats-core jq
+          else
+            sudo apt-get update && sudo apt-get install -y bats jq
+          fi
+
+      - name: Run tests
+        run: bats tests/
