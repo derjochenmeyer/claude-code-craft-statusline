@@ -177,8 +177,15 @@ red='\033[38;2;255;85;85m'
 magenta='\033[38;2;180;140;255m'
 dim='\033[2m'
 rst='\033[0m'
-bg_branch='\033[48;2;25;55;100m'
-fg_branch='\033[38;2;155;200;255m'
+# State-aware branch palette. Picked in the branch block based on the
+# dominant git signal (conflict > diverged > behind > combined > ahead > ...).
+bg_clean='\033[48;2;30;150;70m';     fg_clean='\033[38;2;210;255;220m'
+bg_ahead='\033[48;2;200;130;20m';    fg_ahead='\033[38;2;255;230;130m'
+bg_behind='\033[48;2;30;110;160m';   fg_behind='\033[38;2;180;230;255m'
+bg_combined='\033[48;2;210;90;30m';  fg_combined='\033[38;2;255;200;155m'
+bg_untracked='\033[48;2;80;95;130m'; fg_untracked='\033[38;2;200;215;245m'
+bg_stashed='\033[48;2;130;55;170m';  fg_stashed='\033[38;2;235;195;255m'
+bg_conflict='\033[48;2;190;40;60m';  fg_conflict='\033[38;2;255;180;185m'
 effort_col='\033[38;2;255;175;60m'
 activity_exec='\033[38;2;130;200;120m'
 activity_think='\033[2;38;2;150;150;150m'
@@ -264,7 +271,28 @@ if [[ "$SHOW_BRANCH" == "true" ]]; then
     [[ "$untracked" -gt 0 ]] && git_meta+=" ?${untracked}"
     [[ "$conflicts" -gt 0 ]] && git_meta+=" ⚠${conflicts}"
     [[ -z "$git_meta" ]] && git_meta=" ✔"
-    parts+=("${bg_branch}${fg_branch} ${branch}${git_meta} ${rst}")
+
+    # Pick the dominant signal. Priority runs from "blocking" (conflict)
+    # down to "nothing going on" (clean). combined covers the common
+    # working-tree-with-several-kinds-of-changes case.
+    local_changes=0
+    [[ "$staged"    -gt 0 ]] && local_changes=$((local_changes + 1))
+    [[ "$unstaged"  -gt 0 ]] && local_changes=$((local_changes + 1))
+    [[ "$untracked" -gt 0 ]] && local_changes=$((local_changes + 1))
+    if   [[ "$conflicts" -gt 0 ]];                              then bg_cur="$bg_conflict";  fg_cur="$fg_conflict"
+    elif [[ "$ahead" -gt 0 && "$behind" -gt 0 ]];               then bg_cur="$bg_combined";  fg_cur="$fg_combined"
+    elif [[ "$behind" -gt 0 ]];                                 then bg_cur="$bg_behind";    fg_cur="$fg_behind"
+    elif [[ "$ahead" -gt 0 && "$local_changes" -gt 0 ]];        then bg_cur="$bg_combined";  fg_cur="$fg_combined"
+    elif [[ "$local_changes" -ge 2 ]];                          then bg_cur="$bg_combined";  fg_cur="$fg_combined"
+    elif [[ "$ahead" -gt 0 ]];                                  then bg_cur="$bg_ahead";     fg_cur="$fg_ahead"
+    elif [[ "$unstaged" -gt 0 ]];                               then bg_cur="$bg_ahead";     fg_cur="$fg_ahead"
+    elif [[ "$staged" -gt 0 ]];                                 then bg_cur="$bg_clean";     fg_cur="$fg_clean"
+    elif [[ "$untracked" -gt 0 ]];                              then bg_cur="$bg_untracked"; fg_cur="$fg_untracked"
+    elif [[ "$stash" -gt 0 ]];                                  then bg_cur="$bg_stashed";   fg_cur="$fg_stashed"
+    else                                                             bg_cur="$bg_clean";     fg_cur="$fg_clean"
+    fi
+
+    parts+=("${bg_cur}${fg_cur} ${branch}${git_meta} ${rst}")
   fi
 fi
 
