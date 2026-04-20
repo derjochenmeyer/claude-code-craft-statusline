@@ -355,25 +355,27 @@ if [[ "$SHOW_ACTIVITY" == "true" && -n "${session_file:-}" ]]; then
   act_mtime=$(stat -c %Y "$session_file" 2>/dev/null || stat -f %m "$session_file" 2>/dev/null || echo 0)
   act_idle=$(( $(date +%s) - act_mtime ))
   if (( act_idle >= 0 && act_idle < ACTIVITY_LIVE_WINDOW_SECS )); then
-    # Examine only the very last line of the transcript. A fresh mtime
-    # alone is not enough — Claude Code also writes the transcript on
-    # turn-end, so "recently modified" can mean "just finished" rather
-    # than "still working". stop_reason disambiguates:
-    #   assistant + stop_reason in {end_turn,max_tokens,...}  -> done, no indicator
-    #   assistant + stop_reason == "tool_use"                 -> executing (tool)
-    #   assistant + no stop_reason yet                        -> streaming, thinking
-    #   user (usually a tool_result)                          -> thinking
-    last_tool=$("$JQ" -r '
-      if .type == "assistant" then
-        (.message.stop_reason // null) as $sr
-        | if $sr != null and $sr != "tool_use" then "DONE"
-          elif (.message.content | type) == "array" and (.message.content | length) > 0 then
-            .message.content[-1] as $last
-            | if ($last.type // empty) == "tool_use" and ($last.name | type) == "string" then $last.name
-              else "" end
-          else "" end
-      else "" end
-    ' <(tail -1 "$session_file" 2>/dev/null) 2>/dev/null)
+    # A fresh mtime alone is not enough — Claude Code also writes
+    # transcript events (attachment, file-history-snapshot, custom-title)
+    # after an assistant turn ends. So the absolute last line is often
+    # metadata, not an assistant message. Walk back to the most recent
+    # assistant event and inspect its stop_reason:
+    #   stop_reason in {end_turn,max_tokens,...}  -> done, no indicator
+    #   stop_reason == "tool_use"                 -> executing (tool)
+    #   no stop_reason yet                        -> streaming, thinking
+    last_tool=$(tail -100 "$session_file" 2>/dev/null | "$JQ" -s -r '
+      map(select(.type == "assistant")) | .[-1] as $a
+      | if $a == null then ""
+        else
+          ($a.message.stop_reason // null) as $sr
+          | if $sr != null and $sr != "tool_use" then "DONE"
+            elif ($a.message.content | type) == "array" and ($a.message.content | length) > 0 then
+              $a.message.content[-1] as $last
+              | if ($last.type // empty) == "tool_use" and ($last.name | type) == "string" then $last.name
+                else "" end
+            else "" end
+        end
+    ' 2>/dev/null)
     # Whitelist the tool name so a pathological entry cannot reach printf %b
     if [[ "$last_tool" != "DONE" ]] && [[ ${#last_tool} -gt $MAX_ACTIVITY_LEN || ! "$last_tool" =~ ^[A-Za-z0-9_.-]*$ ]]; then
       last_tool=""
