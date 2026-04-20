@@ -25,7 +25,6 @@ SHOW_RATE_LIMITS=true
 SHOW_COST=false          # API BILLING ONLY. Meaningless on Pro/Team/Max flat-rate plans.
 SHOW_ACTIVITY=true       # ● indicator when Claude is actively working (thinking/executing/researching)
 SHOW_UPDATE=true         # ⬆ badge when a newer version is available on the repo
-SHOW_EMOJI=false         # legacy ✍️ prefix for context. Default prefix is "ctx▸", aligning with 5h▸/7d▸/cost▸.
 SHOW_COLOR=true          # ANSI color on percentages: green < 50%, yellow < 70%, orange < 85%, red ≥ 85%
 
 # ── Thresholds ───────────────────────────────────────────────────
@@ -274,13 +273,7 @@ if [[ "$SHOW_CONTEXT" == "true" ]]; then
   ctx=$(echo "$input" | "$JQ" -r '.context_window.used_percentage // empty' 2>/dev/null)
   if [[ -n "$ctx" ]]; then
     c=$(color_for_pct "$ctx")
-    # Default prefix is "ctx▸" (terse, aligns with 5h▸/7d▸/cost▸).
-    # The legacy ✍️ emoji is opt-in via SHOW_EMOJI=true.
-    if [[ "$SHOW_EMOJI" == "true" ]]; then
-      prefix="✍️ "
-    else
-      prefix="ctx${dim}▸${rst}"
-    fi
+    prefix="ctx${dim}▸${rst}"
     dur_str=""
     if [[ -n "$session_file" ]]; then
       # GNU stat (-c %W) is checked BEFORE BSD stat (-f %B) because GNU

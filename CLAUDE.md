@@ -75,7 +75,7 @@ Home-dir layout after install:
 
 - **Cost is API-billing only.** On Pro/Team/Max flat-rate plans, `cost` and any derived metrics are hypothetical pay-per-token equivalents, not real invoices. Cost stays off by default. README, SKILL.md, and wizard make this explicit so users do not misread the number.
 
-- **`SHOW_EMOJI`, `SHOW_COLOR`, `SHOW_CONTEXT_ALERT`, `SHOW_UPDATE` are intentionally not in the wizard.** They are edited by hand in the `.sh` file. The wizard only flips the seven semantic fields.
+- **`SHOW_COLOR`, `SHOW_CONTEXT_ALERT`, `SHOW_UPDATE` are intentionally not in the wizard.** They are edited by hand in the `.sh` file. The wizard only flips the seven semantic fields.
 
 - **Version lives in five places.** `craft-statusline.sh`, `craft-statusline-wizard.sh`, and `install.sh` each have a `VERSION="X.Y.Z"` near the top. `skills/craft-statusline/SKILL.md` has `version:` in its frontmatter. The README badge is the fifth. When bumping, update all five and add a CHANGELOG entry.
 
