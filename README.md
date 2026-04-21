@@ -6,7 +6,7 @@ A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code
 
 No Node, no Python, no Nerd Fonts. Only requires jq (small command-line JSON parser, auto-installed during setup).
 
-![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/0487ecb3-5e0d-4e8f-8df5-7a5aef237c90)
+![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/3b23d36a-26ee-482a-8fe5-ff221274f6a6)
 
 Colors shift with how much of the window you've used. Rate limits run green → yellow → orange → red by percentage. The context field uses a traffic light that leans on absolute tokens, not just percent: green while you're safely below the "context rot" zone, yellow with a `⚠` once the session crosses 400k tokens (where model recall measurably degrades on 1M-window models), red with a `⚠` once the window is 85% full and auto-compact is imminent. Session cost is off by default, and stays that way for flat-rate plans where it would be misleading.
 
@@ -108,6 +108,12 @@ If you are on **Pro, Team, or Max** (flat monthly subscription), `cost` is off b
 Since v1.1.0 the branch badge is also color-aware: it picks its color from the dominant git signal, so you can read the state of the working tree at a glance without parsing the symbols.
 
 ![git state badges](https://github.com/user-attachments/assets/4887886c-609b-4bf0-bcac-d4a31c6bc5ba)
+
+Two real examples in context:
+
+![git status example 1](https://github.com/user-attachments/assets/26af512e-88e3-4de5-899c-fca89b274d7a)
+
+![git status example 2](https://github.com/user-attachments/assets/05cc025d-d6f8-43a2-8e7d-f5c4ee3a72ba)
 
 | Symbol | Meaning | Why it matters |
 |--------|---------|----------------|
