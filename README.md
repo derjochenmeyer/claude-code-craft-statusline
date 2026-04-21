@@ -1,6 +1,6 @@
 # A carefully crafted Claude Code statusline
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
+![Version](https://img.shields.io/badge/version-1.2.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
 
 A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline, written in bash, with minimal design and requirements. Shows model, effort-level, git branch and status, session context, rate limits, session cost and activity.
 
@@ -8,7 +8,7 @@ No Node, no Python, no Nerd Fonts. Only requires jq (small command-line JSON par
 
 ![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/0487ecb3-5e0d-4e8f-8df5-7a5aef237c90)
 
-Colors shift as context and rate limits climb: green under 50%, yellow under 70%, orange under 85%, red above. At `CONTEXT_ALERT_AT` (default 85%) a red `⚠` appears next to the context percentage. Session cost is off by default, and stays that way for flat-rate plans where it would be misleading.
+Colors shift with how much of the window you've used. Rate limits run green → yellow → orange → red by percentage. The context field uses a traffic light that leans on absolute tokens, not just percent: green while you're safely below the "context rot" zone, yellow with a `⚠` once the session crosses 400k tokens (where model recall measurably degrades on 1M-window models), red with a `⚠` once the window is 85% full and auto-compact is imminent. Session cost is off by default, and stays that way for flat-rate plans where it would be misleading.
 
 ---
 
@@ -90,7 +90,7 @@ The `SHOW_*` flags sit at the top. Advanced toggles (`CONTEXT_ALERT_AT`, `ACTIVI
 |-------|---------|-------------------|
 | Model + effort | `Sonnet 4.6▸normal` | Which model and effort level you're running on. Useful when you switch between projects and want to confirm you're not burning high-effort tokens on a quick task. |
 | Git branch | `main ✔` | Live branch status. Uncommitted changes, staged files, stashes, and remote drift visible without leaving the editor. |
-| Context | `ctx▸42% (2h34m)` | Context window usage and session age. A red `⚠` is appended when usage crosses `CONTEXT_ALERT_AT` (default 85%), making the imminent-compact moment obvious at a glance. |
+| Context | `ctx▸42% (2h34m)` | Context window usage and session age. Three-stage traffic light: green while tokens < `CONTEXT_DEGRADE_AT_TOKENS` (default 400k); yellow `⚠` once absolute tokens cross that (model recall degrades noticeably on long contexts, regardless of how much headroom the 1M window still has); red `⚠` once percentage ≥ `CONTEXT_ALERT_AT` (default 85%) and auto-compact is imminent. |
 | Rate limits | `5h▸12% │ 7d▸8%` | Rolling token usage across the last 5 hours and 7 days. Color shifts from green to yellow to red as you approach limits, before you hit them, not after. |
 | Session cost | `cost▸0.43$` | **API billing only.** Session cost in USD at pay-per-token rates. On flat-rate plans (Pro, Team, Max) this is a hypothetical equivalent, not your actual invoice. Off by default. |
 | Activity indicator | `● thinking` / `● executing (Bash)` / `● researching` | What Claude is doing right now. Hook-free: driven by the mtime and last tool_use event of the active session transcript. Shows one of three states: generating text (`thinking`), running a concrete tool (`executing (Tool)`), or delegating to a subagent (`researching`). Disappears when the transcript has been idle for 10 seconds. |

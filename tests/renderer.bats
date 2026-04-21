@@ -103,6 +103,28 @@ teardown() {
   [[ "$output" == *"255;85;85"* ]]
 }
 
+@test "context at 42% with low tokens renders green, no ⚠" {
+  CONTEXT_PCT=42 CONTEXT_TOKENS=150000 run bash -c "$(declare -f sample_json); sample_json | bash '$RENDERER'"
+  clean=$(echo "$output" | strip_ansi)
+  [[ "$clean" != *"⚠"* ]]
+  # Green (0;175;80) on the percentage
+  [[ "$output" == *"0;175;80"* ]]
+}
+
+@test "context at 42% with >=400k tokens renders yellow ⚠ (context rot threshold)" {
+  CONTEXT_PCT=42 CONTEXT_TOKENS=420000 run bash -c "$(declare -f sample_json); sample_json | bash '$RENDERER'"
+  clean=$(echo "$output" | strip_ansi)
+  [[ "$clean" == *"⚠"* ]]
+  # Yellow (230;200;0) on both the percentage and the warning, not red
+  [[ "$output" == *"230;200;0"* ]]
+  [[ "$output" != *"255;85;85"* ]]
+}
+
+@test "context at 90% overrides yellow (percent-alert wins over token-degrade)" {
+  CONTEXT_PCT=90 CONTEXT_TOKENS=420000 run bash -c "$(declare -f sample_json); sample_json | bash '$RENDERER'"
+  [[ "$output" == *"255;85;85"* ]]
+}
+
 # ── Security: escape-injection defense ────────────────────────────────────────
 
 @test "hostile model display_name gets scrubbed" {

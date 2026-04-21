@@ -17,11 +17,12 @@ strip_ansi() {
 sample_json() {
   local model="${MODEL_NAME:-claude-sonnet-4-6}"
   local ctx="${CONTEXT_PCT:-42}"
+  local ctx_tokens="${CONTEXT_TOKENS:-0}"   # sum stored in cache_read for simplicity
   local fh="${FIVE_H:-15}"
   local sd="${SEVEN_D:-30}"
   local cost="${COST:-0.85}"
   cat <<EOF
-{"model":{"display_name":"$model"},"context_window":{"used_percentage":$ctx},"rate_limits":{"five_hour":{"used_percentage":$fh},"seven_day":{"used_percentage":$sd}},"cost":{"total_cost_usd":$cost}}
+{"model":{"display_name":"$model"},"context_window":{"used_percentage":$ctx,"current_usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":$ctx_tokens}},"rate_limits":{"five_hour":{"used_percentage":$fh},"seven_day":{"used_percentage":$sd}},"cost":{"total_cost_usd":$cost}}
 EOF
 }
 

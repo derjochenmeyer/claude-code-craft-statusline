@@ -13,7 +13,7 @@
 #   --version   print version and exit
 #   --doctor    run environment checks and exit
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 
 # ── Configuration ────────────────────────────────────────────────
 SHOW_MODEL=true
@@ -28,7 +28,18 @@ SHOW_UPDATE=true         # ⬆ badge when a newer version is available on the re
 SHOW_COLOR=true          # ANSI color on percentages: green < 50%, yellow < 70%, orange < 85%, red ≥ 85%
 
 # ── Thresholds ───────────────────────────────────────────────────
-CONTEXT_ALERT_AT=85            # context percent that triggers the ⚠ badge
+# Context field traffic light:
+#   tokens <  CONTEXT_DEGRADE_AT_TOKENS  → green, no symbol
+#   tokens >= CONTEXT_DEGRADE_AT_TOKENS  → yellow + ⚠  (context rot / quality degrades)
+#   percent >= CONTEXT_ALERT_AT          → red    + ⚠  (compact is imminent)
+# Rot trumps Yellow. The degrade threshold is absolute because context rot
+# is a model-behaviour problem, not a fill-level problem: on a 1M window,
+# 85% is way past the point of degraded recall.
+CONTEXT_ALERT_AT=85                   # percent of window used → red ⚠
+CONTEXT_DEGRADE_AT_TOKENS=400000      # absolute tokens → yellow ⚠
+# NOTE: 400k reflects Anthropic's public MRCR v2 numbers for the Claude 4
+# family (roughly 15-17 pp accuracy drop between 256k and 1M) as of 2026-04.
+# Re-validate when new model generations ship.
 ACTIVITY_LIVE_WINDOW_SECS=10   # jsonl mtime younger than this means "Claude is active"
 
 # ── Security bounds ──────────────────────────────────────────────
@@ -300,7 +311,29 @@ fi
 if [[ "$SHOW_CONTEXT" == "true" ]]; then
   ctx=$(echo "$input" | "$JQ" -r '.context_window.used_percentage // empty' 2>/dev/null)
   if [[ -n "$ctx" ]]; then
-    c=$(color_for_pct "$ctx")
+    # Absolute token count from the LAST API call. Claude Code's docs
+    # explicitly recommend current_usage.* over total_* (cumulative session
+    # totals are a separate, pre-compact figure). Sum input + cache_creation
+    # + cache_read; exclude output (it belongs to the next turn).
+    ctx_tokens=$(echo "$input" | "$JQ" -r '
+      (.context_window.current_usage.input_tokens // 0)
+      + (.context_window.current_usage.cache_creation_input_tokens // 0)
+      + (.context_window.current_usage.cache_read_input_tokens // 0)
+    ' 2>/dev/null)
+    ctx_tokens=${ctx_tokens:-0}
+    # Traffic light: red (percent >= ALERT) > yellow (tokens >= DEGRADE) > green.
+    ctx_int=${ctx%%.*}
+    if [[ "$SHOW_COLOR" == "true" ]]; then
+      if [[ "$ctx_int" =~ ^[0-9]+$ ]] && (( ctx_int >= CONTEXT_ALERT_AT )); then
+        c="$red"
+      elif [[ "$ctx_tokens" =~ ^[0-9]+$ ]] && (( ctx_tokens >= CONTEXT_DEGRADE_AT_TOKENS )); then
+        c="$yellow"
+      else
+        c="$green"
+      fi
+    else
+      c=""
+    fi
     prefix="ctx${dim}▸${rst}"
     dur_str=""
     if [[ -n "$session_file" ]]; then
@@ -326,14 +359,10 @@ if [[ "$SHOW_CONTEXT" == "true" ]]; then
         fi
       fi
     fi
-    # Context alert: append ⚠ in red when we cross CONTEXT_ALERT_AT,
-    # so a full-context session is visually obvious before auto-compact.
+    # ⚠ shares the %-text color. Symbol appears on yellow and red, not on green.
     alert=""
-    if [[ "$SHOW_CONTEXT_ALERT" == "true" ]]; then
-      ctx_int=${ctx%%.*}
-      if [[ "$ctx_int" =~ ^[0-9]+$ ]] && (( ctx_int >= CONTEXT_ALERT_AT )); then
-        alert=" ${red}⚠${rst}"
-      fi
+    if [[ "$SHOW_CONTEXT_ALERT" == "true" && -n "$c" && "$c" != "$green" ]]; then
+      alert=" ${c}⚠${rst}"
     fi
     parts+=("${prefix}${c}${ctx}%${rst}${alert}${dur_str}")
   fi

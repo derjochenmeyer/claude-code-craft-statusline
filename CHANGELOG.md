@@ -3,6 +3,16 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## [1.2.0] -- 2026-04-21
+
+### Added
+- **Context field is now an absolute-token traffic light.** Green while `current_usage` tokens stay below `CONTEXT_DEGRADE_AT_TOKENS` (default 400,000); yellow `⚠` once the session crosses that threshold, which is the zone where model recall measurably degrades on 1M-window models even though there's still headroom; red `⚠` once `used_percentage >= CONTEXT_ALERT_AT` (default 85%) and auto-compact is near. The `⚠` shares the field color (not hard-coded red).
+- `CONTEXT_DEGRADE_AT_TOKENS=400000` threshold, documented with a reminder to re-validate as new model generations ship.
+
+### Changed
+- **Context field stops using the percent-only gradient** (green < 50, yellow < 70, orange < 85, red ≥ 85). That scheme is kept only for the rate-limit fields, where percent-of-window is the right axis.
+- Absolute token count is derived from `.context_window.current_usage.{input_tokens, cache_creation_input_tokens, cache_read_input_tokens}` per Anthropic's documented statusline schema. `total_input_tokens` / `total_output_tokens` are cumulative session totals and deliberately avoided.
+
 ## [1.1.0] -- 2026-04-20
 
 ### Added

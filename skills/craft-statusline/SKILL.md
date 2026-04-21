@@ -1,6 +1,6 @@
 ---
 name: craft-statusline
-version: 1.1.0
+version: 1.2.0
 description: Configure the craft status bar. Shows annotated field preview, detects existing setup, and auto-installs or auto-activates if needed, all in one response. Asks only when another statusline script would be replaced (destructive case).
 allowed-tools: Read, Write, Bash
 ---
@@ -84,7 +84,7 @@ Sonnet 4.6▸normal │ main ✔ │ ctx▸30% │ 5h▸29% │ 7d▸30% │ cos
 | model | `Sonnet 4.6` | Current model name (shortened) |
 | effort | `▸normal` | Effort level from settings.json, rendered inline after the model |
 | branch | `main ✔` | Git branch as a colored badge plus status (✔/⇡N/⇣N/+N/!N/?N/⚠N). On by default |
-| context | `ctx▸30%` | Context window used so far in this session. A red `⚠` appears when usage crosses `CONTEXT_ALERT_AT` (default 85%). |
+| context | `ctx▸30%` | Context window used. Traffic light: green under 400k tokens, yellow `⚠` at/above `CONTEXT_DEGRADE_AT_TOKENS` (context rot zone), red `⚠` at/above `CONTEXT_ALERT_AT` percent (default 85%, auto-compact is near). |
 | rate | `5h▸29%` `7d▸30%` | Token usage in the rolling 5h and 7d windows |
 | cost | `cost▸0.43$` | **API billing only.** Session cost in USD at pay-per-token rates. On flat-rate plans (Pro/Team/Max) this is a hypothetical number, not your actual invoice. Off by default. |
 | activity | `● thinking` / `● executing (Bash)` / `● researching` | Hook-free activity indicator driven by session-transcript mtime. Shows `thinking` (Claude generating text), `executing (tool-name)` (Claude calling a tool), or `researching` (Claude dispatched a subagent). Disappears when the transcript has not been written to in the last 10 seconds. |
