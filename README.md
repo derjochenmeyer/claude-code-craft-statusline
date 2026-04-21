@@ -109,12 +109,6 @@ Since v1.1.0 the branch badge is also color-aware: it picks its color from the d
 
 ![git state badges](https://github.com/user-attachments/assets/4887886c-609b-4bf0-bcac-d4a31c6bc5ba)
 
-Two real examples in context:
-
-![git status example 1](https://github.com/user-attachments/assets/26af512e-88e3-4de5-899c-fca89b274d7a)
-
-![git status example 2](https://github.com/user-attachments/assets/05cc025d-d6f8-43a2-8e7d-f5c4ee3a72ba)
-
 | Symbol | Meaning | Why it matters |
 |--------|---------|----------------|
 | `✔` | Clean working tree | Nothing uncommitted, safe to switch context or wrap up the session |
