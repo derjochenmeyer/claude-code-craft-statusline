@@ -4,9 +4,9 @@
 
 A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline, written in bash, with minimal design and requirements. Shows model, effort-level, git branch and status, session context, rate limits, session cost and activity.
 
-No Node, no Python, no Nerd Fonts. Only requires jq (small command-line JSON parser, auto-installed during setup).
-
 ![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/3b23d36a-26ee-482a-8fe5-ff221274f6a6)
+
+No Node, no Python, no Nerd Fonts. Only requires jq (small command-line JSON parser, auto-installed during setup).
 
 Colors shift with how much of the window you've used. Rate limits run green → yellow → orange → red by percentage. The context field uses a traffic light that leans on absolute tokens, not just percent: green while you're safely below the "context rot" zone, yellow with a `⚠` once the session crosses 400k tokens (where model recall measurably degrades on 1M-window models), red with a `⚠` once the window is 85% full and auto-compact is imminent. Session cost is off by default, and stays that way for flat-rate plans where it would be misleading.
 
