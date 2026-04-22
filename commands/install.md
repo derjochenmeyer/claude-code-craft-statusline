@@ -7,22 +7,13 @@ allowed-tools: Bash, Read
 
 Install craft-statusline as the active status line.
 
-## What this does
-
-1. Verifies `jq` is on PATH (hard requirement). If missing, stops and shows the install command for the user's platform.
-2. Checks `~/.claude/settings.json` for an existing `statusLine` entry. If a *different* script is already wired up, reports it and stops — the user must run `/craft-statusline:install force` to overwrite, since this is destructive.
-3. Writes a `statusLine` block pointing at `${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh` with `refreshInterval: 1000`.
-4. Confirms with the rendered statusline preview.
-
-## Steps
-
-### 1. Check jq
+## Step 1: Check jq
 
 ```bash
 command -v jq >/dev/null 2>&1 || echo "JQ_MISSING"
 ```
 
-If `JQ_MISSING`:
+If `JQ_MISSING`, stop and show:
 
 ```
 jq is required for craft-statusline (parses Claude Code's JSON input).
@@ -34,36 +25,39 @@ Install it:
 Then re-run /craft-statusline:install.
 ```
 
-Stop here.
+Do not proceed.
 
-### 2. Inspect existing statusLine
+## Step 2: Inspect existing statusLine
 
 ```bash
 jq -r '.statusLine.command // "NONE"' ~/.claude/settings.json 2>/dev/null
 ```
 
-Possible outcomes:
+Outcomes:
 
-- `NONE`, the file does not exist, or the `statusLine` field is absent → proceed to step 3.
-- Output contains `craft-statusline.sh` → already installed, jump to step 4 (reconfirm + show preview).
-- Anything else (different script): report it and stop, unless `$ARGUMENTS` contains `force`:
+- `NONE`, file missing, or `statusLine` absent. proceed to Step 3.
+- Output mentions `craft-statusline.sh`. already installed, jump to Step 4.
+- Anything else. report it and stop, unless `$ARGUMENTS` contains `force`:
+  ```
+  A different statusline script is already active:
+    [current command]
 
-```
-A different statusline script is already active:
-  [current command]
+  Run /craft-statusline:install force to replace it.
+  ```
 
-Run /craft-statusline:install force to replace it.
-```
+## Step 3: Write settings.json
 
-### 3. Write settings.json
+**CRITICAL:** Write the literal string `${CLAUDE_PLUGIN_ROOT}` into `settings.json`. Do NOT substitute it with the expanded absolute path you may see in the rendered version of this skill. Claude Code expands the variable at runtime, so the literal token survives plugin reinstalls and cache-path changes (e.g. when the plugin moves from `/2.0.0/` to `/2.1.0/`). Writing the expanded path will silently break the status line on the next plugin update.
 
-The statusLine command must reference `${CLAUDE_PLUGIN_ROOT}` so the path resolves to wherever the plugin manager unpacked craft-statusline.
+The `command` value must be exactly: `${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh` as a literal JSON string.
+
+Use this jq invocation. The single-quoted filter prevents shell expansion of `$CLAUDE_PLUGIN_ROOT`, so the literal token survives into the JSON:
 
 ```bash
 mkdir -p ~/.claude
-tmp=$(mktemp)
 existing=~/.claude/settings.json
 [[ -f "$existing" ]] || echo '{}' > "$existing"
+tmp=$(mktemp)
 jq '.statusLine = {
   "type": "command",
   "command": "${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh",
@@ -71,9 +65,15 @@ jq '.statusLine = {
 }' "$existing" > "$tmp" && mv "$tmp" "$existing"
 ```
 
-### 4. Report and preview
+Verify the literal token landed in the file (this catches accidental substitution):
 
-Tell the user:
+```bash
+grep -F '${CLAUDE_PLUGIN_ROOT}' ~/.claude/settings.json >/dev/null \
+  && echo "OK: literal CLAUDE_PLUGIN_ROOT token preserved" \
+  || echo "FAIL: settings.json contains the expanded path. Re-run install."
+```
+
+## Step 4: Report
 
 ```
 craft-statusline activated.
