@@ -1,5 +1,7 @@
 # Claude Code statusline
 
+![Anthropic — Claude Code](https://img.shields.io/badge/Anthropic-Claude_Code-D97757?style=for-the-badge&logo=anthropic&logoColor=white&labelColor=2D2D2D) ![Claude Code — Plugin](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6?style=for-the-badge&labelColor=2D2D2D)
+
 ![Version](https://img.shields.io/badge/version-1.2.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
 
 A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline, written in bash, with minimal design and requirements. Shows model, effort-level, git branch and status, session context, rate limits, session cost and activity.
