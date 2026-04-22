@@ -47,11 +47,11 @@ Outcomes:
 
 ## Step 3: Write settings.json
 
-**CRITICAL:** Write the literal string `${CLAUDE_PLUGIN_ROOT}` into `settings.json`. Do NOT substitute it with the expanded absolute path you may see in the rendered version of this skill. Claude Code expands the variable at runtime, so the literal token survives plugin reinstalls and cache-path changes (e.g. when the plugin moves from `/2.0.0/` to `/2.1.0/`). Writing the expanded path will silently break the status line on the next plugin update.
+**CRITICAL:** Write the literal string `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh` into `settings.json`. Do NOT substitute the variable references with the expanded absolute path you may see in the rendered version of this skill. Both tokens must survive into the JSON verbatim so the line keeps working across plugin updates and across the upstream `${CLAUDE_PLUGIN_ROOT}` expansion bug ([anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079)).
 
-The `command` value must be exactly: `${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh` as a literal JSON string.
+Pattern explained: Claude Code's status-line subprocess does not currently populate `${CLAUDE_PLUGIN_ROOT}`, so a bare reference to it expands to the empty string and the renderer is never reached. The POSIX default-expansion `${CLAUDE_PLUGIN_ROOT:-…}` falls back to the marketplace clone path, which is version-stable. Once the upstream bug is fixed, the same line transparently switches back to the official plugin root with no further action needed.
 
-Use this jq invocation. The single-quoted filter prevents shell expansion of `$CLAUDE_PLUGIN_ROOT`, so the literal token survives into the JSON:
+Use this jq invocation. The single-quoted filter prevents shell expansion of `$CLAUDE_PLUGIN_ROOT` and `$HOME`, so both literal tokens survive into the JSON:
 
 ```bash
 mkdir -p ~/.claude
@@ -60,16 +60,16 @@ existing=~/.claude/settings.json
 tmp=$(mktemp)
 jq '.statusLine = {
   "type": "command",
-  "command": "${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh",
+  "command": "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh",
   "refreshInterval": 1000
 }' "$existing" > "$tmp" && mv "$tmp" "$existing"
 ```
 
-Verify the literal token landed in the file (this catches accidental substitution):
+Verify both literal tokens landed in the file (this catches accidental substitution):
 
 ```bash
-grep -F '${CLAUDE_PLUGIN_ROOT}' ~/.claude/settings.json >/dev/null \
-  && echo "OK: literal CLAUDE_PLUGIN_ROOT token preserved" \
+grep -F '${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}' ~/.claude/settings.json >/dev/null \
+  && echo "OK: literal expansion pattern preserved" \
   || echo "FAIL: settings.json contains the expanded path. Re-run install."
 ```
 

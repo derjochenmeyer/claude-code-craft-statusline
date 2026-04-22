@@ -7,6 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 Only user-facing code and feature changes are tracked: new fields, new flags, behavioural changes, bug fixes, removals, security fixes. README copy, screenshots, badges, internal refactors, and CI tweaks are intentionally left out, since git history covers them. If a change wouldn't show up in `--doctor` or in the rendered output, it doesn't belong here.
 
+## [2.0.1] -- 2026-04-22
+
+### Fixed
+- **Statusline now actually renders after a fresh plugin install.** Claude Code does not currently populate `${CLAUDE_PLUGIN_ROOT}` in the statusline subprocess environment (it does for hooks, MCP, LSP, and monitors). A bare `${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh` therefore expanded to `/scripts/craft-statusline.sh` and silently produced no output. `/craft-statusline:install` now writes a POSIX default-expansion `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh` that falls back to the version-stable marketplace clone path. Once the upstream bug ([anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079)) is fixed, the same line transparently uses the official plugin root.
+
+### Migration
+Existing 2.0.0 users who already have a non-rendering statusline: re-run `/craft-statusline:install` (no `force` flag needed; it overwrites its own previous wiring).
+
 ## [2.0.0] -- 2026-04-22
 
 Major rewrite. craft-statusline is now an official Claude Code plugin distributed through its own marketplace. The old curl installer, the wizard, and the embedded SHA256-pinned jq downloader are gone.

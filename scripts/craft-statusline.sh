@@ -14,7 +14,7 @@
 #   --version   print version and exit
 #   --doctor    run environment checks and exit
 
-VERSION="2.0.0"
+VERSION="2.0.1"
 
 # Boolean coercion: anything except literal "true" → false.
 bool_opt() {

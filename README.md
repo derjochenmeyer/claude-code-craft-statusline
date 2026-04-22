@@ -2,7 +2,7 @@
 
 [![Anthropic](https://img.shields.io/badge/Anthropic-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code) [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6)](https://docs.claude.com/en/docs/claude-code/plugins)
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
+![Version](https://img.shields.io/badge/version-2.0.1-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
 
 A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline written in bash, distributed as an official Claude Code plugin. Shows model, effort level, git branch and status, session context, rate limits, session cost, and activity.
 
@@ -29,6 +29,10 @@ Restart Claude Code (or open a new session) to see the statusline render at the 
 1. **`/plugin marketplace add …`** registers this repo's marketplace with Claude Code so it knows where to fetch the plugin from.
 2. **`/plugin install craft-statusline`** downloads the plugin into Claude Code's local plugin directory and enables it.
 3. **`/craft-statusline:install`** writes a `statusLine` block into `~/.claude/settings.json` pointing at the plugin's renderer. The slash command checks `jq` is on PATH first and refuses to overwrite an existing different statusLine without `force`.
+
+> **Why the `command` line looks the way it does (`${CLAUDE_PLUGIN_ROOT:-…}`)**
+>
+> Claude Code currently does not populate `${CLAUDE_PLUGIN_ROOT}` for the statusline subprocess (it does for hooks, MCP, LSP, and monitors). Reported upstream as [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079). Until it's fixed, `/craft-statusline:install` writes a POSIX default-expansion that falls back to the version-stable marketplace clone path. Once the upstream bug is fixed, the same line transparently uses the official plugin root with no further action.
 
 ### Requirements
 

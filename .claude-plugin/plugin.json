@@ -1,6 +1,6 @@
 {
   "name": "craft-statusline",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A carefully crafted Claude Code statusline written in bash. Shows model, effort level, git branch (state-aware color palette), context window with absolute-token traffic light, rate limits, optional cost, and a hook-free activity indicator.",
   "author": {
     "name": "Jochen Meyer",
