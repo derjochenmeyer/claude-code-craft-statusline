@@ -7,6 +7,40 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 Only user-facing code and feature changes are tracked: new fields, new flags, behavioural changes, bug fixes, removals, security fixes. README copy, screenshots, badges, internal refactors, and CI tweaks are intentionally left out, since git history covers them. If a change wouldn't show up in `--doctor` or in the rendered output, it doesn't belong here.
 
+## [2.0.0] -- 2026-04-22
+
+Major rewrite. craft-statusline is now an official Claude Code plugin distributed through its own marketplace. The old curl installer, the wizard, and the embedded SHA256-pinned jq downloader are gone.
+
+### Breaking changes
+- **Installation is now plugin-based.** The old `curl … | bash` installer is removed. New flow: `/plugin marketplace add derjochenmeyer/claude-code-craft-statusline` → `/plugin install craft-statusline` → `/craft-statusline:install`.
+- **Slash commands are namespaced** under the plugin: `/craft-statusline:install`, `/craft-statusline:uninstall`, `/craft-statusline:status`, `/craft-statusline:on <field>`, `/craft-statusline:off <field>`. The old single `/craft-statusline` skill with positional args is replaced.
+- **Configuration moved to `userConfig`.** Field toggles (`show_*`) and thresholds (`context_alert_at`, `context_degrade_at_tokens`, `activity_live_window_secs`) live in `~/.claude/settings.json` under `pluginConfigs."craft-statusline".options.*`, surfaced to the renderer as `CLAUDE_PLUGIN_OPTION_*` environment variables. Editing the renderer script directly no longer works. Claude Code's plugin manager owns the file.
+- **`SHOW_EFFORT` toggle removed.** Effort is always shown when `show_model` is on, since the two never made sense apart.
+
+### Removed
+- **`install.sh`**, the curl-pipe installer, with its SHA256-pinned jq auto-download, atomic tmpfile pattern, and Gatekeeper quarantine handling.
+- **`craft-statusline-wizard.sh`**, the interactive TTY configurator. The plugin's slash commands cover the same surface.
+- **In-renderer update checker** (`SHOW_UPDATE`, `~/.claude/state/version-check`, background curl). Plugin manager handles updates via `/plugin update`.
+
+### Changed
+- **jq is now a hard requirement.** The `:install` command verifies it up front and points at `brew install jq` / `apt install jq`. No automatic binary download anymore.
+- **Renderer lives at `scripts/craft-statusline.sh`** inside the plugin directory, referenced via `${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh` in `settings.json`.
+
+### Migration from v1.x
+
+There is no in-place upgrade. The pre-2.0 installer wrote files to `~/.claude/craft-statusline.sh` etc. To migrate:
+
+```bash
+# 1. Remove the old standalone files
+rm -f ~/.claude/craft-statusline.sh ~/.claude/craft-statusline-wizard.sh
+rm -rf ~/.claude/skills/craft-statusline ~/.claude/commands/craft-statusline.md
+rm -f ~/.claude/state/version-check
+# 2. Clear the old statusLine entry from ~/.claude/settings.json (it points at the deleted file)
+# 3. Install via the plugin flow (see README)
+```
+
+Custom fields in `~/.claude/craft-statusline-custom.sh` continue to work without changes.
+
 ## [1.2.0] -- 2026-04-21
 
 ### Added

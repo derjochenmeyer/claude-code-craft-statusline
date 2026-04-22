@@ -146,25 +146,5 @@ EOF
   echo "$output" | od -c | grep -q "2   J" && false || true
 }
 
-# ── Update checker ────────────────────────────────────────────────────────────
-
-@test "update badge appears when cached latest version is higher than current" {
-  mkdir -p "$HOME/.claude/state"
-  echo "99.0.0" > "$HOME/.claude/state/version-check"
-  # Touch the file to make it fresh so background check doesn't rewrite
-  touch "$HOME/.claude/state/version-check"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" == *"⬆ v99.0.0"* ]]
-}
-
-@test "update badge hidden when cached version equals current" {
-  local cur
-  cur=$(bash "$RENDERER" --version | awk '{print $NF}')
-  mkdir -p "$HOME/.claude/state"
-  echo "$cur" > "$HOME/.claude/state/version-check"
-  touch "$HOME/.claude/state/version-check"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" != *"⬆"* ]]
-}
+# Update checker tests removed in v2.0.0: the plugin manager handles
+# updates via /plugin update.

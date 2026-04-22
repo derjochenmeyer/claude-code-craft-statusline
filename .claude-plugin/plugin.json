@@ -1,0 +1,86 @@
+{
+  "name": "craft-statusline",
+  "version": "2.0.0",
+  "description": "A carefully crafted Claude Code statusline written in bash. Shows model, effort level, git branch (state-aware color palette), context window with absolute-token traffic light, rate limits, optional cost, and a hook-free activity indicator.",
+  "author": {
+    "name": "Jochen Meyer",
+    "url": "https://x.com/derjochenmeyer"
+  },
+  "homepage": "https://github.com/derjochenmeyer/claude-code-craft-statusline",
+  "repository": "https://github.com/derjochenmeyer/claude-code-craft-statusline",
+  "license": "MIT",
+  "keywords": ["statusline", "context", "rate-limits", "git", "activity", "bash"],
+  "userConfig": {
+    "show_model": {
+      "type": "boolean",
+      "title": "Show model + effort",
+      "description": "Display the active model and effort level (e.g. Sonnet 4.6▸normal).",
+      "default": true
+    },
+    "show_branch": {
+      "type": "boolean",
+      "title": "Show git branch badge",
+      "description": "Display the colored git branch badge with state-aware palette.",
+      "default": true
+    },
+    "show_context": {
+      "type": "boolean",
+      "title": "Show context usage",
+      "description": "Display the context window usage with traffic light coloring (green / yellow / red).",
+      "default": true
+    },
+    "show_context_alert": {
+      "type": "boolean",
+      "title": "Show context warning symbol",
+      "description": "Append the ⚠ symbol when the context enters the yellow or red zone.",
+      "default": true
+    },
+    "show_rate_limits": {
+      "type": "boolean",
+      "title": "Show 5h / 7d rate limits",
+      "description": "Display the rolling 5-hour and 7-day rate limit usage.",
+      "default": true
+    },
+    "show_cost": {
+      "type": "boolean",
+      "title": "Show session cost",
+      "description": "Display session cost in USD. API billing only — meaningless on flat-rate plans (Pro/Team/Max). Off by default.",
+      "default": false
+    },
+    "show_activity": {
+      "type": "boolean",
+      "title": "Show activity indicator",
+      "description": "Display the hook-free indicator that shows whether Claude is thinking, executing a tool, or researching via a subagent.",
+      "default": true
+    },
+    "show_color": {
+      "type": "boolean",
+      "title": "Use ANSI color",
+      "description": "Apply ANSI color codes. Disable for monochrome terminals or capture pipelines.",
+      "default": true
+    },
+    "context_alert_at": {
+      "type": "number",
+      "title": "Context red threshold (percent)",
+      "description": "Percentage of the context window at which the badge turns red and a ⚠ is shown. Auto-compact is usually imminent.",
+      "default": 85,
+      "min": 1,
+      "max": 100
+    },
+    "context_degrade_at_tokens": {
+      "type": "number",
+      "title": "Context yellow threshold (absolute tokens)",
+      "description": "Absolute token count at which the badge turns yellow. Reflects the zone where model recall measurably degrades on large-window models.",
+      "default": 400000,
+      "min": 1000
+    },
+    "activity_live_window_secs": {
+      "type": "number",
+      "title": "Activity stale window (seconds)",
+      "description": "Transcript mtime younger than this counts as active. Older means idle, indicator disappears.",
+      "default": 10,
+      "min": 1,
+      "max": 600
+    }
+  }
+}

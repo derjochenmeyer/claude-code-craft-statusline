@@ -2,30 +2,39 @@
 # craft-statusline
 # https://github.com/derjochenmeyer/claude-code-craft-statusline
 #
-# Configure with /craft-statusline inside a Claude Code session,
-# or edit the SHOW_* variables below directly.
+# Plugin renderer. Wired up by Claude Code via the user's settings.json
+# pointing at ${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh.
 #
-# Install: run install.sh or copy to ~/.claude/craft-statusline.sh
-# Settings: add to ~/.claude/settings.json:
-#   "statusLine": { "type": "command", "command": "~/.claude/craft-statusline.sh", "refreshInterval": 5000 }
+# Configuration is supplied by the plugin's userConfig as
+# CLAUDE_PLUGIN_OPTION_<KEY> environment variables (see plugin.json).
+# The :on / :off / :status slash commands edit those values in
+# ~/.claude/settings.json under pluginConfigs.craft-statusline.options.*
 #
 # Flags:
 #   --version   print version and exit
 #   --doctor    run environment checks and exit
 
-VERSION="1.2.0"
+VERSION="2.0.0"
 
-# ── Configuration ────────────────────────────────────────────────
-SHOW_MODEL=true
-SHOW_EFFORT=true
-SHOW_BRANCH=true         # git branch badge: main ⇡2 +1 !3 ?1
-SHOW_CONTEXT=true
-SHOW_CONTEXT_ALERT=true  # ⚠ badge when context crosses CONTEXT_ALERT_AT
-SHOW_RATE_LIMITS=true
-SHOW_COST=false          # API BILLING ONLY. Meaningless on Pro/Team/Max flat-rate plans.
-SHOW_ACTIVITY=true       # ● indicator when Claude is actively working (thinking/executing/researching)
-SHOW_UPDATE=true         # ⬆ badge when a newer version is available on the repo
-SHOW_COLOR=true          # ANSI color on percentages: green < 50%, yellow < 70%, orange < 85%, red ≥ 85%
+# Boolean coercion: anything except literal "true" → false.
+bool_opt() {
+  local v="$1" default="$2"
+  [[ -z "$v" ]] && v="$default"
+  [[ "$v" == "true" ]] && echo "true" || echo "false"
+}
+
+# ── Configuration (from plugin userConfig, with sane defaults) ────
+SHOW_MODEL=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_MODEL:-}" "true")
+SHOW_BRANCH=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_BRANCH:-}" "true")
+SHOW_CONTEXT=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_CONTEXT:-}" "true")
+SHOW_CONTEXT_ALERT=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_CONTEXT_ALERT:-}" "true")
+SHOW_RATE_LIMITS=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_RATE_LIMITS:-}" "true")
+SHOW_COST=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_COST:-}" "false")
+SHOW_ACTIVITY=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_ACTIVITY:-}" "true")
+SHOW_COLOR=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_COLOR:-}" "true")
+# Effort is always shown when SHOW_MODEL is on (always paired). Removed as
+# a separate toggle in v2.0.0 since the two never made sense apart.
+SHOW_EFFORT="$SHOW_MODEL"
 
 # ── Thresholds ───────────────────────────────────────────────────
 # Context field traffic light:
@@ -35,12 +44,12 @@ SHOW_COLOR=true          # ANSI color on percentages: green < 50%, yellow < 70%,
 # Rot trumps Yellow. The degrade threshold is absolute because context rot
 # is a model-behaviour problem, not a fill-level problem: on a 1M window,
 # 85% is way past the point of degraded recall.
-CONTEXT_ALERT_AT=85                   # percent of window used → red ⚠
-CONTEXT_DEGRADE_AT_TOKENS=400000      # absolute tokens → yellow ⚠
+CONTEXT_ALERT_AT="${CLAUDE_PLUGIN_OPTION_CONTEXT_ALERT_AT:-85}"
+CONTEXT_DEGRADE_AT_TOKENS="${CLAUDE_PLUGIN_OPTION_CONTEXT_DEGRADE_AT_TOKENS:-400000}"
 # NOTE: 400k reflects Anthropic's public MRCR v2 numbers for the Claude 4
-# family (roughly 15-17 pp accuracy drop between 256k and 1M) as of 2026-04.
+# family (roughly 15-17 pp accuracy drop between 256k and 1M).
 # Re-validate when new model generations ship.
-ACTIVITY_LIVE_WINDOW_SECS=10   # jsonl mtime younger than this means "Claude is active"
+ACTIVITY_LIVE_WINDOW_SECS="${CLAUDE_PLUGIN_OPTION_ACTIVITY_LIVE_WINDOW_SECS:-10}"
 
 # ── Security bounds ──────────────────────────────────────────────
 # Hard caps on any user-influenced string we render. Defence-in-depth on
@@ -52,25 +61,14 @@ MAX_EFFORT_LEN=32
 MAX_BRANCH_LEN=128
 MAX_ACTIVITY_LEN=48
 
-# ── Update check cache ───────────────────────────────────────────
-# Background curl writes the latest published version here; the next
-# render reads it without blocking. The cache expires after 24h.
-VERSION_CHECK_FILE="$HOME/.claude/state/version-check"
-VERSION_CHECK_INTERVAL_SECS=86400
-VERSION_CHECK_URL="https://raw.githubusercontent.com/derjochenmeyer/claude-code-craft-statusline/main/craft-statusline.sh"
-# ─────────────────────────────────────────────────────────────────
-
 # Guard against unset HOME.
 : "${HOME:?HOME is not set; cannot locate ~/.claude}"
 
+# jq is a hard requirement. The plugin's :install command verifies it
+# before activating, so by the time we run here it should be present.
+# If it disappeared since install, we render nothing rather than garbage.
 find_jq() {
-  if command -v jq >/dev/null 2>&1; then
-    echo "jq"
-  elif [[ -x "$HOME/.claude/bin/jq" ]]; then
-    echo "$HOME/.claude/bin/jq"
-  else
-    echo ""
-  fi
+  command -v jq 2>/dev/null
 }
 
 # ── CLI flags ────────────────────────────────────────────────────
@@ -122,28 +120,8 @@ case "${1:-}" in
       fi
     fi
 
-    printf '  %-24s ' "installed renderer:"
-    if [[ -x "$HOME/.claude/craft-statusline.sh" ]]; then
-      echo "$HOME/.claude/craft-statusline.sh"
-    else
-      echo "not installed at ~/.claude/"
-    fi
-
-    printf '  %-24s ' "skill:"
-    if [[ -f "$HOME/.claude/skills/craft-statusline/SKILL.md" ]]; then
-      echo "installed"
-    else
-      echo "not installed"
-    fi
-
-    printf '  %-24s ' "commands symlink:"
-    if [[ -L "$HOME/.claude/commands/craft-statusline.md" ]]; then
-      echo "-> $(readlink "$HOME/.claude/commands/craft-statusline.md")"
-    elif [[ -e "$HOME/.claude/commands/craft-statusline.md" ]]; then
-      echo "file present but not a symlink"
-    else
-      echo "not present"
-    fi
+    printf '  %-24s ' "renderer path:"
+    echo "${CLAUDE_PLUGIN_ROOT:-(not set, run from a Claude Code session)}/scripts/craft-statusline.sh"
 
     printf '  %-24s ' "custom fields file:"
     if [[ -f "$HOME/.claude/craft-statusline-custom.sh" ]]; then
@@ -152,19 +130,19 @@ case "${1:-}" in
       echo "not present (optional)"
     fi
 
-    printf '  %-24s ' "update check:"
-    if [[ -f "$VERSION_CHECK_FILE" ]]; then
-      latest=$(head -1 "$VERSION_CHECK_FILE" 2>/dev/null || echo "?")
-      last_check=$(stat -c %Y "$VERSION_CHECK_FILE" 2>/dev/null || stat -f %m "$VERSION_CHECK_FILE" 2>/dev/null || echo 0)
-      age_hours=$(( ($(date +%s) - last_check) / 3600 ))
-      echo "latest seen: $latest (checked ${age_hours}h ago)"
-    else
-      echo "no check yet (will run in background on next render)"
-    fi
-
     echo ""
-    echo "  SHOW_* flags (from this script):"
-    grep '^SHOW_' "$0" | sed 's/^/    /'
+    echo "  Active configuration (resolved from CLAUDE_PLUGIN_OPTION_* env):"
+    printf '    %-30s %s\n' "SHOW_MODEL=" "$SHOW_MODEL"
+    printf '    %-30s %s\n' "SHOW_BRANCH=" "$SHOW_BRANCH"
+    printf '    %-30s %s\n' "SHOW_CONTEXT=" "$SHOW_CONTEXT"
+    printf '    %-30s %s\n' "SHOW_CONTEXT_ALERT=" "$SHOW_CONTEXT_ALERT"
+    printf '    %-30s %s\n' "SHOW_RATE_LIMITS=" "$SHOW_RATE_LIMITS"
+    printf '    %-30s %s\n' "SHOW_COST=" "$SHOW_COST"
+    printf '    %-30s %s\n' "SHOW_ACTIVITY=" "$SHOW_ACTIVITY"
+    printf '    %-30s %s\n' "SHOW_COLOR=" "$SHOW_COLOR"
+    printf '    %-30s %s\n' "CONTEXT_ALERT_AT=" "$CONTEXT_ALERT_AT"
+    printf '    %-30s %s\n' "CONTEXT_DEGRADE_AT_TOKENS=" "$CONTEXT_DEGRADE_AT_TOKENS"
+    printf '    %-30s %s\n' "ACTIVITY_LIVE_WINDOW_SECS=" "$ACTIVITY_LIVE_WINDOW_SECS"
     echo ""
     exit 0
     ;;
@@ -449,48 +427,6 @@ if [[ "$SHOW_ACTIVITY" == "true" && -n "${session_file:-}" ]]; then
         parts+=("${activity_exec}● executing${rst} ${dim}(${last_tool})${rst}")
         ;;
     esac
-  fi
-fi
-
-# ── Update check (non-blocking) ──────────────────────────────────
-# Fire-and-forget background curl refreshes the cached latest-version
-# file at most once per 24h. The current render reads whatever is
-# already in the cache; a new version discovered this run surfaces
-# on the next render.
-if [[ "$SHOW_UPDATE" == "true" ]]; then
-  need_check=false
-  if [[ ! -f "$VERSION_CHECK_FILE" ]]; then
-    need_check=true
-  else
-    last_check=$(stat -c %Y "$VERSION_CHECK_FILE" 2>/dev/null || stat -f %m "$VERSION_CHECK_FILE" 2>/dev/null || echo 0)
-    if (( $(date +%s) - last_check > VERSION_CHECK_INTERVAL_SECS )); then
-      need_check=true
-    fi
-  fi
-  if $need_check; then
-    mkdir -p "$HOME/.claude/state" 2>/dev/null
-    (
-      latest=$(curl -fsSL -m 3 "$VERSION_CHECK_URL" 2>/dev/null \
-               | grep -m1 '^VERSION=' \
-               | cut -d'"' -f2)
-      if [[ "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        printf '%s\n' "$latest" > "$VERSION_CHECK_FILE"
-      else
-        # Touch the file anyway to prevent retry storms on repeated failures.
-        touch "$VERSION_CHECK_FILE"
-      fi
-    ) >/dev/null 2>&1 &
-    disown 2>/dev/null || true
-  fi
-
-  if [[ -s "$VERSION_CHECK_FILE" ]]; then
-    latest_version=$(head -1 "$VERSION_CHECK_FILE" 2>/dev/null || echo "")
-    if [[ "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [[ "$latest_version" != "$VERSION" ]]; then
-      highest=$(printf '%s\n%s\n' "$VERSION" "$latest_version" | sort -V | tail -1)
-      if [[ "$highest" == "$latest_version" ]]; then
-        parts+=("${yellow}⬆ v${latest_version}${rst}")
-      fi
-    fi
   fi
 fi
 

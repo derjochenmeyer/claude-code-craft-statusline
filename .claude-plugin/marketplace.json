@@ -1,0 +1,17 @@
+{
+  "name": "craft-statusline-marketplace",
+  "owner": {
+    "name": "Jochen Meyer",
+    "url": "https://x.com/derjochenmeyer"
+  },
+  "plugins": [
+    {
+      "name": "craft-statusline",
+      "source": ".",
+      "description": "Bash statusline for Claude Code: model + effort, state-aware git badge, context traffic light (absolute-token degrade threshold), rate limits, optional cost, hook-free activity indicator.",
+      "version": "2.0.0",
+      "category": "statusline",
+      "tags": ["statusline", "context", "rate-limits", "git", "activity"]
+    }
+  ]
+}

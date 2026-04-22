@@ -145,37 +145,24 @@ teardown() {
   done
 }
 
-# ── Installer / wizard flags ──────────────────────────────────────────────────
-
-@test "installer --version prints version and jq version" {
-  run bash "$INSTALLER" --version
-  [[ "$status" -eq 0 ]]
-  [[ "$output" == *"installer"* ]]
-  [[ "$output" == *"bundles jq"* ]]
-}
-
-@test "wizard --version prints semver and exits 0" {
-  run bash "$WIZARD" --version
-  [[ "$status" -eq 0 ]]
-  [[ "$output" =~ craft-statusline-wizard\ [0-9]+\.[0-9]+\.[0-9]+ ]]
-}
-
 # ── Static source checks ──────────────────────────────────────────────────────
 
-@test "all three scripts pass bash -n syntax check" {
+@test "renderer passes bash -n syntax check" {
   bash -n "$RENDERER"
-  bash -n "$WIZARD"
-  bash -n "$INSTALLER"
 }
 
 @test "no em-dash as sentence separator in docs" {
   ! grep -l '—' "$PROJECT_ROOT/README.md" "$PROJECT_ROOT/CLAUDE.md" "$PROJECT_ROOT/CHANGELOG.md" "$PROJECT_ROOT/CONTRIBUTING.md" 2>/dev/null
 }
 
-@test "version string is consistent across renderer, wizard, installer" {
-  ver_r=$(bash "$RENDERER"  --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  ver_w=$(bash "$WIZARD"    --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  ver_i=$(bash "$INSTALLER" --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  [[ "$ver_r" == "$ver_w" ]]
-  [[ "$ver_r" == "$ver_i" ]]
+@test "renderer version matches plugin manifest" {
+  ver_r=$(bash "$RENDERER" --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  ver_m=$(jq -r '.version' "$PROJECT_ROOT/.claude-plugin/plugin.json")
+  [[ "$ver_r" == "$ver_m" ]]
+}
+
+@test "marketplace.json version matches plugin manifest" {
+  ver_m=$(jq -r '.version' "$PROJECT_ROOT/.claude-plugin/plugin.json")
+  ver_p=$(jq -r '.plugins[0].version' "$PROJECT_ROOT/.claude-plugin/marketplace.json")
+  [[ "$ver_m" == "$ver_p" ]]
 }

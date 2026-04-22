@@ -2,9 +2,7 @@
 # Shared helpers for bats tests.
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RENDERER="$PROJECT_ROOT/craft-statusline.sh"
-WIZARD="$PROJECT_ROOT/craft-statusline-wizard.sh"
-INSTALLER="$PROJECT_ROOT/install.sh"
+RENDERER="$PROJECT_ROOT/scripts/craft-statusline.sh"
 
 # Strip ANSI escape codes so we can match against plain text.
 strip_ansi() {

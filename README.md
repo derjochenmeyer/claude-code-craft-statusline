@@ -1,88 +1,63 @@
 # Claude Code statusline
 
-[![Anthropic](https://img.shields.io/badge/Anthropic-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code)
+[![Anthropic](https://img.shields.io/badge/Anthropic-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code) [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6)](https://docs.claude.com/en/docs/claude-code/plugins)
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
+![Version](https://img.shields.io/badge/version-2.0.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
 
-A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline, written in bash, with minimal design and requirements. Shows model, effort-level, git branch and status, session context, rate limits, session cost and activity.
+A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline written in bash, distributed as an official Claude Code plugin. Shows model, effort level, git branch and status, session context, rate limits, session cost, and activity.
 
 ![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/3b23d36a-26ee-482a-8fe5-ff221274f6a6)
 
-No Node, no Python, no Nerd Fonts. Only requires jq (small command-line JSON parser, auto-installed during setup).
+No Node, no Python, no Nerd Fonts. Only requires `jq` (small command-line JSON parser).
 
-Colors shift with how much of the window you've used. Rate limits run green → yellow → orange → red by percentage. The context field uses a traffic light that leans on absolute tokens, not just percent: green while you're safely below the "context rot" zone, yellow with a `⚠` once the session crosses 400k tokens (where model recall measurably degrades on 1M-window models), red with a `⚠` once the window is 85% full and auto-compact is imminent. Session cost is off by default, and stays that way for flat-rate plans where it would be misleading.
+The context field uses a traffic light that leans on absolute tokens, not percent: green while you're below the "context rot" zone, yellow with a `⚠` once the session crosses 400k tokens (where model recall measurably degrades on 1M-window models), red with a `⚠` once the window is 85% full and auto-compact is imminent. Rate limits run green → yellow → orange → red by percentage. Session cost is off by default and stays that way for flat-rate plans where it would be misleading.
 
 ---
 
 ## Install
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/derjochenmeyer/claude-code-craft-statusline/main/install.sh | bash
+```
+/plugin marketplace add derjochenmeyer/claude-code-craft-statusline
+/plugin install craft-statusline
+/craft-statusline:install
 ```
 
-The installer:
+Restart Claude Code (or open a new session) to see the statusline render at the bottom of the screen.
 
-1. Ensures `jq` is available (PATH → Homebrew → direct static binary to `~/.claude/bin/jq`, no sudo, no PATH edits). The direct-download path pins a specific jq version and verifies it against a SHA256 checksum hardcoded in `install.sh`, not fetched from the same host.
-2. Installs `craft-statusline.sh` and `craft-statusline-wizard.sh` to `~/.claude/`.
-3. Installs the `craft-statusline` skill to `~/.claude/skills/` and symlinks it as a global slash command.
-4. Activates the statusline in `~/.claude/settings.json`, but only if nothing else is set. An existing statusline is reported, never overwritten silently.
+### What each step does
 
-Restart Claude Code after install. One command, full feature set.
+1. **`/plugin marketplace add …`** registers this repo's marketplace with Claude Code so it knows where to fetch the plugin from.
+2. **`/plugin install craft-statusline`** downloads the plugin into Claude Code's local plugin directory and enables it.
+3. **`/craft-statusline:install`** writes a `statusLine` block into `~/.claude/settings.json` pointing at the plugin's renderer. The slash command checks `jq` is on PATH first and refuses to overwrite an existing different statusLine without `force`.
 
-### Inspected install
+### Requirements
 
-If piping into `bash` makes you twitch (reasonable), do it in two steps:
+| What | Why |
+|------|-----|
+| **Claude Code** | The statusline reads its JSON input from the harness |
+| **bash 3.2+** | Everything here is shell. macOS ships 3.2, Linux has 4+ |
+| **jq** | Parses Claude Code's JSON input. Install with `brew install jq` (macOS) or `apt install jq` (Debian/Ubuntu). The `:install` command checks for it. |
+| **git** | Only needed if `show_branch` is on (default) |
 
-```bash
-curl -fsSL -o /tmp/craft-install.sh https://raw.githubusercontent.com/derjochenmeyer/claude-code-craft-statusline/main/install.sh
-less /tmp/craft-install.sh   # or $EDITOR, shasum, whatever you want
-bash /tmp/craft-install.sh
-```
-
-The installer is ~250 lines of commented shell. The jq SHA256 constants, checksum logic, and quarantine handling are all inspectable before anything runs.
-
-### Verifying the install
-
-```bash
-bash ~/.claude/craft-statusline.sh --doctor
-```
-
-Reports which `jq` was found, whether `settings.json` is wired up, the current refresh interval, and the current `SHOW_*` flags. Useful before opening an issue.
+Windows: use WSL.
 
 ---
 
 ## Configure
 
-Three ways. Pick one.
-
-### Inside Claude Code
+All configuration runs through slash commands. Fields are toggled on or off; numeric thresholds (red percent, yellow token count) live in `~/.claude/settings.json` under `pluginConfigs.craft-statusline.options.*` and can be edited there directly.
 
 ```
-/craft-statusline                        show all fields and current state
-/craft-statusline cost activity          toggle those two on/off
-/craft-statusline on activity            force enable
-/craft-statusline off cost               force disable
-/craft-statusline install                (re)install and activate
-/craft-statusline install cost activity  install and configure fields in one go
+/craft-statusline:status              show current configuration and a live preview
+/craft-statusline:on cost             enable a field
+/craft-statusline:off branch          disable a field
+/craft-statusline:install             (re-)wire into settings.json
+/craft-statusline:uninstall           remove from settings.json
 ```
 
-Field names: `model`, `effort`, `context`, `rate`, `cost`, `branch`, `activity`.
+Field names: `model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `activity`, `color`.
 
-### Interactive wizard
-
-```bash
-bash ~/.claude/craft-statusline-wizard.sh
-```
-
-Walks through every field with the current value, shows a preview, applies on confirm.
-
-### Edit the file
-
-```bash
-$EDITOR ~/.claude/craft-statusline.sh
-```
-
-The `SHOW_*` flags sit at the top. Advanced toggles (`CONTEXT_ALERT_AT`, `ACTIVITY_LIVE_WINDOW_SECS`, `SHOW_UPDATE`, `SHOW_CONTEXT_ALERT`) live there too. Edits take effect on the next statusline refresh.
+Defaults: `model + branch + context + context_alert + rate_limits + activity + color` on, `cost` off.
 
 ---
 
@@ -91,19 +66,15 @@ The `SHOW_*` flags sit at the top. Advanced toggles (`CONTEXT_ALERT_AT`, `ACTIVI
 | Field | Example | What it tells you |
 |-------|---------|-------------------|
 | Model + effort | `Sonnet 4.6▸normal` | Which model and effort level you're running on. Useful when you switch between projects and want to confirm you're not burning high-effort tokens on a quick task. |
-| Git branch | `main ✔` | Live branch status. Uncommitted changes, staged files, stashes, and remote drift visible without leaving the editor. |
-| Context | `ctx▸42% (2h34m)` | Context window usage and session age. Three-stage traffic light: green while tokens < `CONTEXT_DEGRADE_AT_TOKENS` (default 400k); yellow `⚠` once absolute tokens cross that (model recall degrades noticeably on long contexts, regardless of how much headroom the 1M window still has); red `⚠` once percentage ≥ `CONTEXT_ALERT_AT` (default 85%) and auto-compact is imminent. |
+| Git branch | `main ✔` | Live branch status with a state-aware colored badge. Uncommitted changes, staged files, stashes, and remote drift visible without leaving the editor. |
+| Context | `ctx▸42% (2h34m)` | Context window usage and session age. Three-stage traffic light: green while tokens < `context_degrade_at_tokens` (default 400k); yellow `⚠` once absolute tokens cross that (model recall degrades noticeably on long contexts, regardless of how much headroom the 1M window still has); red `⚠` once percentage ≥ `context_alert_at` (default 85%) and auto-compact is imminent. |
 | Rate limits | `5h▸12% │ 7d▸8%` | Rolling token usage across the last 5 hours and 7 days. Color shifts from green to yellow to red as you approach limits, before you hit them, not after. |
 | Session cost | `cost▸0.43$` | **API billing only.** Session cost in USD at pay-per-token rates. On flat-rate plans (Pro, Team, Max) this is a hypothetical equivalent, not your actual invoice. Off by default. |
-| Activity indicator | `● thinking` / `● executing (Bash)` / `● researching` | What Claude is doing right now. Hook-free: driven by the mtime and last tool_use event of the active session transcript. Shows one of three states: generating text (`thinking`), running a concrete tool (`executing (Tool)`), or delegating to a subagent (`researching`). Disappears when the transcript has been idle for 10 seconds. |
-
-### Update checker
-
-An `⬆ v1.2.3` badge appears automatically when a newer release is available on the repo. The check runs in the background at most once per 24 hours, uses a 3-second timeout, and never blocks the render. Disable with `SHOW_UPDATE=false`.
+| Activity indicator | `● thinking` / `● executing (Bash)` / `● researching` | What Claude is doing right now. Hook-free: driven by the mtime and last `assistant` event of the active session transcript. Shows `thinking` (Claude generating text), `executing (Tool)` (Claude calling a tool), or `researching` (Claude dispatched a subagent). Disappears when the transcript has been idle for 10 seconds. |
 
 ### A note on `cost` and flat-rate plans
 
-If you are on **Pro, Team, or Max** (flat monthly subscription), `cost` is off by default and you should leave it off. It reflects the API-equivalent token cost, not your actual invoice. Your real constraints on those plans are the 5-hour and 7-day rate limits shown in the `rate` field.
+If you are on **Pro, Team, or Max** (flat monthly subscription), `cost` is off by default and you should leave it off. It reflects the API-equivalent token cost, not your actual invoice. Your real constraints on those plans are the 5-hour and 7-day rate limits shown in the rate field.
 
 ### Git branch at a glance
 
@@ -124,122 +95,57 @@ Since v1.1.0 the branch badge is also color-aware: it picks its color from the d
 
 ---
 
-## Manual activation
+## Diagnostics
 
-The installer wires the statusline into `~/.claude/settings.json` automatically. If you want to wire it up by hand (or migrate from another script), add this block:
-
-```json
-"statusLine": {
-  "type": "command",
-  "command": "~/.claude/craft-statusline.sh",
-  "refreshInterval": 5000
-}
+```bash
+bash <plugin-dir>/scripts/craft-statusline.sh --doctor
 ```
 
----
+Reports bash version, jq presence, git, the resolved configuration (from `CLAUDE_PLUGIN_OPTION_*` env or defaults), and the active settings.json wiring. Useful before opening an issue.
 
-## Requirements
-
-| What | Why | Installer behavior |
-|------|-----|-------------------|
-| **Claude Code** | The statusline reads its JSON input from the harness | Install Claude Code yourself first |
-| **bash 3.2+** | Everything here is shell. macOS ships 3.2, Linux has 4+ | Comes with your OS |
-| **jq** | Parses Claude Code's JSON input | Installed automatically: Homebrew first, then a pinned static binary to `~/.claude/bin/jq` with SHA256 verification |
-| **git** | Only needed if `SHOW_BRANCH=true` | Pre-installed on Linux; on macOS installed on first `git` call (Xcode CLT) |
-
-Nothing else. No Nerd Fonts, no Node, no Python. Windows: use WSL.
+You can also run `/craft-statusline:status` from inside Claude Code to see the same configuration plus a live render.
 
 ---
 
 ## Custom fields
 
-Drop a file at `~/.claude/craft-statusline-custom.sh`. The statusline sources it (never eval) and calls the functions you list in `CUSTOM_FIELDS`:
+The renderer optionally sources `~/.claude/craft-statusline-custom.sh` if it exists. That file lives in your home directory (not in the plugin), so plugin updates do not touch it.
 
 ```bash
 # ~/.claude/craft-statusline-custom.sh
-CUSTOM_FIELDS="field_ticket field_env field_npm"
-
-# Linear / Jira ticket from a local file in the current repo
-field_ticket() {
-  local t
-  t=$(cat .current-ticket 2>/dev/null) || return
-  [[ -z "$t" ]] && return
-  printf '\033[38;2;200;100;200mticket▸%s\033[0m' "$t"
+field_aws_profile() {
+  printf '%s' "${AWS_PROFILE:-default}"
+}
+field_kube_context() {
+  kubectl config current-context 2>/dev/null
 }
 
-# Deploy environment badge from an env var, colored by severity
-field_env() {
-  case "${DEPLOY_ENV:-}" in
-    prod)  printf '\033[48;2;200;50;50m PROD \033[0m' ;;
-    stage) printf '\033[48;2;200;150;50m STAGE \033[0m' ;;
-    dev)   printf '\033[38;2;100;200;100m[dev]\033[0m' ;;
-  esac
-}
-
-# npm version from package.json, if in a Node project
-field_npm() {
-  [[ -f package.json ]] || return
-  local v
-  v=$(jq -r '.version // empty' package.json 2>/dev/null) || return
-  [[ -n "$v" ]] && printf '\033[2mnpm %s\033[0m' "$v"
-}
+# Set CUSTOM_FIELDS in this file to control order and which fields render.
+CUSTOM_FIELDS="aws_profile kube_context"
 ```
 
-Rules the renderer enforces for safety:
-
-- The file is **sourced**, not eval'd. Write it as real bash.
-- Only functions matching `^field_[A-Za-z0-9_]+$` are called. Unknown names in `CUSTOM_FIELDS` are skipped.
-- Each function runs in a subshell with a 2-second rendertime cap, so a crash or hang in one custom field cannot take down the renderer or stall the refresh.
-- Empty output is treated as "do not render this field this refresh".
-
-Custom fields render after all built-ins. Order within the custom block follows the order of `CUSTOM_FIELDS`.
+Function names must match `^field_[A-Za-z0-9_]+$`. The renderer sources the file (never `eval`s) and each call runs under a 2-second timeout.
 
 ---
 
-## Companion tool
+## Update
 
-For deeper token analytics, burn-rate history, and session-level cost breakdowns, [ccusage](https://github.com/ryoppippi/ccusage) parses the same transcript files this statusline reads and produces a rich report. Pairs well.
+```
+/plugin update craft-statusline
+```
 
----
-
-## Troubleshooting
-
-**The statusline is blank.** `jq` is not on the PATH and the fallback at `~/.claude/bin/jq` is missing or broken. Re-run the installer, or `brew install jq`, or download a binary from https://jqlang.github.io/jq/download/.
-
-**Values look stale by a few seconds.** The statusline refreshes every 5 seconds (`refreshInterval: 5000` in `~/.claude/settings.json`). Claude Code debounces updates to ~300ms and only re-invokes the script on new assistant messages, permission mode changes, and vim mode toggles; pure thinking stretches may go longer between refreshes. Each refresh costs roughly 80-150ms on a modern machine.
-
-**Effort is not shown.** The effort field reads `.effortLevel` from `~/.claude/settings.json`. Set it there (for example `"effortLevel": "normal"`) or disable the field with `/craft-statusline off effort`.
-
-**Git branch badge never appears.** The badge only renders in directories that are actually inside a git working tree. If you are in a non-git folder, the branch field is skipped silently.
-
-**Activity indicator does not show.** The activity indicator needs a recent session transcript in `~/.claude/projects/`. It surfaces when the transcript file has been modified in the last 10 seconds (`ACTIVITY_LIVE_WINDOW_SECS`). A brand-new Claude Code session that has not produced a transcript yet, or a long idle moment, hides the indicator.
-
-**Installer reports "another statusline is active".** That is the safety net: an existing `statusLine.command` in `settings.json` is never silently replaced. Run `/craft-statusline install` inside Claude Code to confirm the switch explicitly.
+The plugin manager handles version checks and updates. No background curl, no embedded version checker.
 
 ---
 
 ## Uninstall
 
-```bash
-# 1. Remove the scripts and any timestamped backups the installer left behind
-rm -f ~/.claude/craft-statusline.sh ~/.claude/craft-statusline.sh.bak.* \
-      ~/.claude/craft-statusline-wizard.sh
-
-# 2. Remove the skill and the global slash-command symlink
-rm -rf ~/.claude/skills/craft-statusline
-rm -f  ~/.claude/commands/craft-statusline.md
-
-# 3. Unregister from settings.json (leaves the file valid JSON)
-tmp=$(mktemp) && jq 'del(.statusLine)' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json
-
-# 4. Optional: remove the custom fields file, the update-check cache, and the
-#    installer-managed jq binary
-rm -f ~/.claude/craft-statusline-custom.sh
-rm -f ~/.claude/state/version-check
-rm -f ~/.claude/bin/jq
+```
+/craft-statusline:uninstall    # remove statusLine from settings.json (keeps plugin installed)
+/plugin uninstall craft-statusline   # remove the plugin entirely
 ```
 
-Restart Claude Code. The statusline is gone.
+Custom fields file `~/.claude/craft-statusline-custom.sh` is untouched in either case. delete by hand if you want it gone.
 
 ---
 
