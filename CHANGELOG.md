@@ -3,6 +3,10 @@
 All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
+## What's listed here
+
+Only user-facing code and feature changes are tracked: new fields, new flags, behavioural changes, bug fixes, removals, security fixes. README copy, screenshots, badges, internal refactors, and CI tweaks are intentionally left out, since git history covers them. If a change wouldn't show up in `--doctor` or in the rendered output, it doesn't belong here.
+
 ## [1.2.0] -- 2026-04-21
 
 ### Added
@@ -24,11 +28,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ### Changed
 - **Removed the `SHOW_EMOJI` flag.** `ctx▸` has been the default since v1.0.0 and aligned with `5h▸`/`7d▸`/`cost▸`; the legacy `✍️` opt-in path is gone. One fewer knob, one fewer edge case.
-- **Author line collapsed** into the single sponsor line in README.
-- **Preview screenshot** now links from a GitHub issue attachment instead of shipping `assets/statusline.png` in the repo.
-
-### Docs
-- **SKILL.md**: git symbol reference table added for `/craft-statusline` output.
 
 ## [1.0.0] -- 2026-04-20
 
