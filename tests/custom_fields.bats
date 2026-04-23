@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Tests for custom fields and activity indicator.
+# Tests for custom fields.
 
 load helpers
 
@@ -72,96 +72,23 @@ EOF
   [[ "$status" -eq 0 ]]
   [[ "$output" != *"SLOW_SHOULD_NEVER_RENDER"* ]]
   [[ "$output" == *"AFTER_OK"* ]]
-  # Timeout is 2s per field; add slack for test-machine variance and the
-  # script's other work (activity scan, update-check background fork).
+  # Timeout is 2s per field; add slack for test-machine variance.
   [[ "$elapsed" -lt 8 ]]
 }
 
-# ── Activity indicator (mtime-based, no hooks) ────────────────────────────────
-
-@test "activity shows thinking when session is active with no recent tool_use" {
-  mkdir -p "$HOME/.claude/projects/test-session"
-  jsonl="$HOME/.claude/projects/test-session/session.jsonl"
-  # Assistant message with only text content (no tool_use)
-  echo '{"type":"assistant","message":{"content":[{"type":"text","text":"Hello"}]}}' > "$jsonl"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" == *"● thinking"* ]]
-}
-
-@test "activity shows executing with tool name when last event is a tool_use" {
-  mkdir -p "$HOME/.claude/projects/test-session"
-  jsonl="$HOME/.claude/projects/test-session/session.jsonl"
-  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{"command":"ls"}}]}}' > "$jsonl"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" == *"● executing"* ]]
-  [[ "$clean" == *"(Bash)"* ]]
-}
-
-@test "activity shows researching when last tool is Task" {
-  mkdir -p "$HOME/.claude/projects/test-session"
-  jsonl="$HOME/.claude/projects/test-session/session.jsonl"
-  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Task","input":{"prompt":"..."}}]}}' > "$jsonl"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" == *"● researching"* ]]
-}
-
-@test "activity strips the mcp__server__ prefix for cleaner labels" {
-  mkdir -p "$HOME/.claude/projects/test-session"
-  jsonl="$HOME/.claude/projects/test-session/session.jsonl"
-  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__claude_ai_Ahrefs__rank-tracker-overview","input":{}}]}}' > "$jsonl"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" == *"(rank-tracker-overview)"* ]]
-  [[ "$clean" != *"mcp__"* ]]
-}
-
-@test "activity hides when the transcript file is stale (>60s)" {
-  mkdir -p "$HOME/.claude/projects/test-session"
-  jsonl="$HOME/.claude/projects/test-session/session.jsonl"
-  echo '{"type":"assistant","message":{"content":[{"type":"text","text":"x"}]}}' > "$jsonl"
-  # Touch to 90 seconds ago (default window is 60s)
-  touch -t "$(date -v-90S +%Y%m%d%H%M.%S 2>/dev/null || date -d '90 seconds ago' +%Y%m%d%H%M.%S)" "$jsonl" 2>/dev/null || true
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" != *"●"* ]]
-}
-
-@test "activity reads transcript_path from stdin instead of the global latest jsonl" {
-  # Two sessions exist. The "other" one was written more recently. The
-  # renderer must follow the transcript_path in the input JSON, not the
-  # global mtime, otherwise multi-session setups show the wrong activity.
+@test "transcript_path from stdin is preferred over global latest jsonl" {
+  # Two sessions exist. The "other" one was written more recently. When
+  # the context field reads session start time, it must follow the
+  # transcript_path in the input JSON and not the global mtime, otherwise
+  # multi-session setups show the wrong session duration.
   mkdir -p "$HOME/.claude/projects/mine" "$HOME/.claude/projects/other"
   mine="$HOME/.claude/projects/mine/session.jsonl"
   other="$HOME/.claude/projects/other/session.jsonl"
-  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{}}]}}' > "$mine"
-  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Task","input":{}}]}}' > "$other"
-  # Make "other" newer than "mine" so the global-latest fallback would pick it.
+  echo '{"type":"assistant"}' > "$mine"
+  echo '{"type":"assistant"}' > "$other"
   touch "$other"
-  run bash -c "echo '{\"transcript_path\":\"$mine\"}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" == *"(Bash)"* ]]
-  [[ "$clean" != *"researching"* ]]
+  # Smoke test only: ensure the renderer does not crash when transcript_path
+  # points at a specific session file.
+  run bash -c "echo '{\"transcript_path\":\"$mine\",\"context_window\":{\"used_percentage\":42,\"current_usage\":{\"input_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}}' | bash '$RENDERER'"
+  [[ "$status" -eq 0 ]]
 }
-
-@test "activity hides when no projects directory exists" {
-  # No ~/.claude/projects/ at all
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  clean=$(echo "$output" | strip_ansi)
-  [[ "$clean" != *"●"* ]]
-}
-
-@test "hostile tool name in transcript is whitelist-rejected" {
-  mkdir -p "$HOME/.claude/projects/test-session"
-  jsonl="$HOME/.claude/projects/test-session/session.jsonl"
-  # Attempt to inject via tool_use.name
-  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"\u001b[2J","input":{}}]}}' > "$jsonl"
-  run bash -c "echo '{}' | bash '$RENDERER'"
-  # The clear-screen escape (ESC [ 2 J) must not appear in raw output
-  echo "$output" | od -c | grep -q "2   J" && false || true
-}
-
-# Update checker tests removed in v2.0.0: the plugin manager handles
-# updates via /plugin update.

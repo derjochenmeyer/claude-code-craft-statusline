@@ -14,7 +14,7 @@
 #   --version   print version and exit
 #   --doctor    run environment checks and exit
 
-VERSION="2.0.2"
+VERSION="3.0.0"
 
 # Boolean coercion: anything except literal "true" → false.
 bool_opt() {
@@ -30,7 +30,6 @@ SHOW_CONTEXT=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_CONTEXT:-}" "true")
 SHOW_CONTEXT_ALERT=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_CONTEXT_ALERT:-}" "true")
 SHOW_RATE_LIMITS=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_RATE_LIMITS:-}" "true")
 SHOW_COST=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_COST:-}" "false")
-SHOW_ACTIVITY=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_ACTIVITY:-}" "true")
 SHOW_COLOR=$(bool_opt "${CLAUDE_PLUGIN_OPTION_SHOW_COLOR:-}" "true")
 # Effort is always shown when SHOW_MODEL is on (always paired). Removed as
 # a separate toggle in v2.0.0 since the two never made sense apart.
@@ -49,7 +48,6 @@ CONTEXT_DEGRADE_AT_TOKENS="${CLAUDE_PLUGIN_OPTION_CONTEXT_DEGRADE_AT_TOKENS:-400
 # NOTE: 400k reflects Anthropic's public MRCR v2 numbers for the Claude 4
 # family (roughly 15-17 pp accuracy drop between 256k and 1M).
 # Re-validate when new model generations ship.
-ACTIVITY_LIVE_WINDOW_SECS="${CLAUDE_PLUGIN_OPTION_ACTIVITY_LIVE_WINDOW_SECS:-60}"
 
 # ── Security bounds ──────────────────────────────────────────────
 # Hard caps on any user-influenced string we render. Defence-in-depth on
@@ -59,7 +57,6 @@ ACTIVITY_LIVE_WINDOW_SECS="${CLAUDE_PLUGIN_OPTION_ACTIVITY_LIVE_WINDOW_SECS:-60}
 MAX_MODEL_LEN=64
 MAX_EFFORT_LEN=32
 MAX_BRANCH_LEN=128
-MAX_ACTIVITY_LEN=48
 
 # Guard against unset HOME.
 : "${HOME:?HOME is not set; cannot locate ~/.claude}"
@@ -138,11 +135,9 @@ case "${1:-}" in
     printf '    %-30s %s\n' "SHOW_CONTEXT_ALERT=" "$SHOW_CONTEXT_ALERT"
     printf '    %-30s %s\n' "SHOW_RATE_LIMITS=" "$SHOW_RATE_LIMITS"
     printf '    %-30s %s\n' "SHOW_COST=" "$SHOW_COST"
-    printf '    %-30s %s\n' "SHOW_ACTIVITY=" "$SHOW_ACTIVITY"
     printf '    %-30s %s\n' "SHOW_COLOR=" "$SHOW_COLOR"
     printf '    %-30s %s\n' "CONTEXT_ALERT_AT=" "$CONTEXT_ALERT_AT"
     printf '    %-30s %s\n' "CONTEXT_DEGRADE_AT_TOKENS=" "$CONTEXT_DEGRADE_AT_TOKENS"
-    printf '    %-30s %s\n' "ACTIVITY_LIVE_WINDOW_SECS=" "$ACTIVITY_LIVE_WINDOW_SECS"
     echo ""
     exit 0
     ;;
@@ -176,9 +171,6 @@ bg_untracked='\033[48;2;80;95;130m'; fg_untracked='\033[38;2;200;215;245m'
 bg_stashed='\033[48;2;130;55;170m';  fg_stashed='\033[38;2;235;195;255m'
 bg_conflict='\033[48;2;190;40;60m';  fg_conflict='\033[38;2;255;180;185m'
 effort_col='\033[38;2;255;175;60m'
-activity_exec='\033[38;2;130;200;120m'
-activity_think='\033[2;38;2;150;150;150m'
-activity_research='\033[38;2;180;140;255m'
 
 color_for_pct() {
   [[ "$SHOW_COLOR" != "true" ]] && return
@@ -194,11 +186,10 @@ color_for_pct() {
 sep="${dim}│${rst}"
 
 # ── Session transcript discovery ─────────────────────────────────
-# Both the context field (for session duration) and the activity field
-# (for mtime-based "is Claude active" detection) need the path to this
-# session's .jsonl transcript. Prefer the harness-supplied transcript_path
-# from stdin (correct in multi-session setups); fall back to the most-
-# recently-modified jsonl across all projects only when the input lacks it.
+# The context field uses the transcript's creation time to show session
+# duration. Prefer the harness-supplied transcript_path from stdin (correct
+# in multi-session setups); fall back to the most-recently-modified jsonl
+# across all projects only when the input lacks it.
 session_file=""
 if [[ -n "$input" ]]; then
   candidate=$(echo "$input" | "$JQ" -r 'if (.transcript_path | type) == "string" then .transcript_path else empty end' 2>/dev/null)
@@ -379,65 +370,6 @@ if [[ "$SHOW_COST" == "true" ]]; then
   fi
 fi
 
-# ── Activity indicator (hook-free, driven by session.jsonl mtime) ─
-# Claude Code appends to the active session transcript every time it
-# emits text, calls a tool, or receives a tool result. If the file was
-# written in the last ACTIVITY_LIVE_WINDOW_SECS seconds, Claude is
-# currently active. The last tool_use event in the transcript tells us
-# whether that activity is executing a tool, researching via a subagent
-# (Task), or pure thinking (no recent tool). No hooks, no settings.json
-# writes, no helper script.
-if [[ "$SHOW_ACTIVITY" == "true" && -n "${session_file:-}" ]]; then
-  act_mtime=$(stat -c %Y "$session_file" 2>/dev/null || stat -f %m "$session_file" 2>/dev/null || echo 0)
-  act_idle=$(( $(date +%s) - act_mtime ))
-  if (( act_idle >= 0 && act_idle < ACTIVITY_LIVE_WINDOW_SECS )); then
-    # A fresh mtime alone is not enough — Claude Code also writes
-    # transcript events (attachment, file-history-snapshot, custom-title)
-    # after an assistant turn ends. So the absolute last line is often
-    # metadata, not an assistant message. Walk back to the most recent
-    # assistant event and inspect its stop_reason:
-    #   stop_reason in {end_turn,max_tokens,...}  -> done, no indicator
-    #   stop_reason == "tool_use"                 -> executing (tool)
-    #   no stop_reason yet                        -> streaming, thinking
-    last_tool=$(tail -100 "$session_file" 2>/dev/null | "$JQ" -s -r '
-      map(select(.type == "assistant")) | .[-1] as $a
-      | if $a == null then ""
-        else
-          ($a.message.stop_reason // null) as $sr
-          | if $sr != null and $sr != "tool_use" then "DONE"
-            elif ($a.message.content | type) == "array" and ($a.message.content | length) > 0 then
-              $a.message.content[-1] as $last
-              | if ($last.type // empty) == "tool_use" and ($last.name | type) == "string" then $last.name
-                else "" end
-            else "" end
-        end
-    ' 2>/dev/null)
-    # Whitelist the tool name so a pathological entry cannot reach printf %b
-    if [[ "$last_tool" != "DONE" ]] && [[ ${#last_tool} -gt $MAX_ACTIVITY_LEN || ! "$last_tool" =~ ^[A-Za-z0-9_.-]*$ ]]; then
-      last_tool=""
-    fi
-    # Dot + state label share the activity color; the tool name in
-    # parens stays dim as a secondary detail.
-    case "${last_tool:-}" in
-      DONE)
-        ;;
-      "")
-        parts+=("${activity_think}● thinking${rst}")
-        ;;
-      Task)
-        parts+=("${activity_research}● researching${rst}")
-        ;;
-      mcp__*)
-        short_tool="${last_tool##*__}"
-        parts+=("${activity_exec}● executing${rst} ${dim}(${short_tool})${rst}")
-        ;;
-      *)
-        parts+=("${activity_exec}● executing${rst} ${dim}(${last_tool})${rst}")
-        ;;
-    esac
-  fi
-fi
-
 # ── Custom fields ────────────────────────────────────────────────
 # Sourced from ~/.claude/craft-statusline-custom.sh if it exists. The
 # file defines shell functions whose names must match the whitelist
@@ -454,6 +386,9 @@ run_custom_field() {
   local fn="$1"
   local tmp
   tmp=$(mktemp)
+  # Guard against stray tempfiles if the harness interrupts this function
+  # before the explicit rm below.
+  trap 'rm -f "$tmp"' RETURN
   ( "$fn" >"$tmp" 2>/dev/null ) &
   local pid=$!
   ( sleep "$CUSTOM_FIELD_TIMEOUT_SECS" && kill -9 "$pid" 2>/dev/null ) &

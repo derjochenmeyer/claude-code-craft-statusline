@@ -24,24 +24,3 @@ sample_json() {
 EOF
 }
 
-# Render with a temporary copy of the renderer so we can tweak SHOW_* flags
-# without touching the canonical script.
-render_with_flags() {
-  local flags="$1" tmp json
-  tmp=$(mktemp)
-  cp "$RENDERER" "$tmp"
-  chmod +x "$tmp"
-  while IFS= read -r line; do
-    local key="${line%%=*}" val="${line#*=}"
-    # Replace only the value on the variable line; keep comments intact.
-    sed -i.bak "s/^${key}=.*/${key}=${val}/" "$tmp" 2>/dev/null || perl -i -pe "s/^${key}=.*/${key}=${val}/" "$tmp"
-  done <<< "$flags"
-  rm -f "${tmp}.bak"
-  if [[ -t 0 ]]; then
-    json=$(sample_json)
-    echo "$json" | bash "$tmp"
-  else
-    bash "$tmp"
-  fi
-  rm -f "$tmp"
-}

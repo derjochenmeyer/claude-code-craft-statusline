@@ -2,9 +2,9 @@
 
 [![Anthropic](https://img.shields.io/badge/Anthropic-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code) [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6)](https://docs.claude.com/en/docs/claude-code/plugins)
 
-![Version](https://img.shields.io/badge/version-2.0.2-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
+![Version](https://img.shields.io/badge/version-3.0.0-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
 
-A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline written in bash, distributed as an official Claude Code plugin. Shows model, effort level, git branch and status, session context, rate limits, session cost, and activity.
+A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline written in bash, distributed as an official Claude Code plugin. Shows model, effort level, git branch and status, session context, rate limits, and session cost.
 
 ![claude-code-craft-statusline preview](https://github.com/user-attachments/assets/3b23d36a-26ee-482a-8fe5-ff221274f6a6)
 
@@ -59,9 +59,9 @@ All configuration runs through slash commands. Fields are toggled on or off; num
 /craft-statusline:uninstall           remove from settings.json
 ```
 
-Field names: `model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `activity`, `color`.
+Field names: `model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `color`.
 
-Defaults: `model + branch + context + context_alert + rate_limits + activity + color` on, `cost` off.
+Defaults: `model + branch + context + context_alert + rate_limits + color` on, `cost` off.
 
 ---
 
@@ -74,7 +74,6 @@ Defaults: `model + branch + context + context_alert + rate_limits + activity + c
 | Context | `ctx▸42% (2h34m)` | Context window usage and session age. Three-stage traffic light: green while tokens < `context_degrade_at_tokens` (default 400k); yellow `⚠` once absolute tokens cross that (model recall degrades noticeably on long contexts, regardless of how much headroom the 1M window still has); red `⚠` once percentage ≥ `context_alert_at` (default 85%) and auto-compact is imminent. |
 | Rate limits | `5h▸12% │ 7d▸8%` | Rolling token usage across the last 5 hours and 7 days. Color shifts from green to yellow to red as you approach limits, before you hit them, not after. |
 | Session cost | `cost▸0.43$` | **API billing only.** Session cost in USD at pay-per-token rates. On flat-rate plans (Pro, Team, Max) this is a hypothetical equivalent, not your actual invoice. Off by default. |
-| Activity indicator | `● thinking` / `● executing (Bash)` / `● researching` | What Claude is doing right now. Hook-free: driven by the mtime and last `assistant` event of the active session transcript. Shows `thinking` (Claude generating text), `executing (Tool)` (Claude calling a tool), or `researching` (Claude dispatched a subagent). Disappears when the transcript has been idle for 60 seconds (configurable via `activity_live_window_secs`). |
 
 ### A note on `cost` and flat-rate plans
 
@@ -96,6 +95,17 @@ Since v1.1.0 the branch badge is also color-aware: it picks its color from the d
 | `!N` | N unstaged modifications | Work in progress, still loose |
 | `?N` | N untracked files | New files Claude created that aren't tracked yet |
 | `⚠N` | N merge conflicts | Needs attention before anything else |
+
+---
+
+## Recommended workflow
+
+Running Claude Code across multiple projects in parallel benefits from a multi-session terminal.
+
+- **macOS**: [cmux](https://github.com/manaflow-ai/cmux). Two features make it the pick for Claude Code. A built-in browser pane lets you research, test, and verify changes without switching windows. Context-aware tabs light up when an agent needs your input, so you never miss a session that is waiting on you.
+- **macOS / Linux / Windows**: [Warp](https://www.warp.dev/). A solid cross-platform alternative with tabs and a session sidebar. No browser pane and no per-tab attention signals, but it handles parallel Claude Code sessions cleanly.
+
+craft-statusline runs inside any shell that supports bash and jq.
 
 ---
 

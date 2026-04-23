@@ -9,7 +9,7 @@ Enable one of the craft-statusline boolean options. The argument is the field na
 
 ## Valid arguments
 
-`model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `activity`, `color`
+`model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `color`
 
 ## Steps
 
@@ -19,10 +19,21 @@ Argument is `$ARGUMENTS`. If empty or not in the list above, report:
 
 ```
 Usage: /craft-statusline:on <field>
-Valid fields: model, branch, context, context_alert, rate_limits, cost, activity, color
+Valid fields: model, branch, context, context_alert, rate_limits, cost, color
 ```
 
 Stop.
+
+```bash
+case "$ARGUMENTS" in
+  model|branch|context|context_alert|rate_limits|cost|color) ;;
+  *)
+    echo "Usage: /craft-statusline:on <field>"
+    echo "Valid fields: model, branch, context, context_alert, rate_limits, cost, color"
+    exit 1
+    ;;
+esac
+```
 
 ### 2. Map to option key
 

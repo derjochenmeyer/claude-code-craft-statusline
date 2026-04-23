@@ -29,10 +29,9 @@ For each known option, show whether it is `[x]` (enabled) or `[ ]` (disabled) â€
 | `show_context_alert` | true | âš  symbol on yellow/red |
 | `show_rate_limits` | true | 5h / 7d windows |
 | `show_cost` | false | API cost (only meaningful on pay-per-token plans) |
-| `show_activity` | true | thinking / executing / researching |
 | `show_color` | true | ANSI color globally |
 
-Plus thresholds: `context_alert_at` (red percent), `context_degrade_at_tokens` (yellow tokens), `activity_live_window_secs`.
+Plus thresholds: `context_alert_at` (red percent), `context_degrade_at_tokens` (yellow tokens).
 
 ### 3. Live preview
 
@@ -40,8 +39,10 @@ Run the renderer with a sample payload so the user sees the actual ANSI output. 
 
 ```bash
 echo '{"model":{"display_name":"Sonnet 4.6"},"context_window":{"used_percentage":42,"current_usage":{"input_tokens":1,"cache_creation_input_tokens":1000,"cache_read_input_tokens":150000}},"rate_limits":{"five_hour":{"used_percentage":15},"seven_day":{"used_percentage":30}},"cost":{"total_cost_usd":0.43}}' \
-  | bash "${CLAUDE_PLUGIN_ROOT}/scripts/craft-statusline.sh"
+  | bash "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh"
 ```
+
+The `${CLAUDE_PLUGIN_ROOT:-...}` fallback mirrors the pattern in `commands/install.md` and works around [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079). Remove the fallback here once the upstream fix ships.
 
 ### 4. Report active settings.json wiring
 

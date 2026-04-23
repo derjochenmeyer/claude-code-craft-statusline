@@ -85,5 +85,5 @@ Toggle fields with:
   /craft-statusline:off branch
   /craft-statusline:status
 
-Defaults: model + branch + context + rate-limits + activity on, cost off.
+Defaults: model + branch + context + rate-limits on, cost off.
 ```

@@ -7,6 +7,20 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 Only user-facing code and feature changes are tracked: new fields, new flags, behavioural changes, bug fixes, removals, security fixes. README copy, screenshots, badges, internal refactors, and CI tweaks are intentionally left out, since git history covers them. If a change wouldn't show up in `--doctor` or in the rendered output, it doesn't belong here.
 
+## [3.0.0] -- 2026-04-23
+
+### Breaking changes
+- **Activity indicator removed.** The hook-free indicator that showed `thinking` / `executing` / `researching` is gone. It duplicated information that Claude Code already surfaces in the main pane, and its multi-session-visibility use case is better served by a dedicated terminal multiplexer. See the new Recommended workflow section in the README. The `show_activity` and `activity_live_window_secs` user-config options are removed; settings already on disk are silently ignored.
+
+### Added
+- **Recommended workflow section in the README.** Points users at [cmux](https://github.com/manaflow-ai/cmux) on macOS (browser pane plus context-aware tabs that light up when an agent needs input) and [Warp](https://www.warp.dev/) as the cross-platform alternative for parallel Claude Code sessions.
+
+### Changed
+- **`/craft-statusline:status` live-preview now uses the same `${CLAUDE_PLUGIN_ROOT:-...}` default-expansion as `/craft-statusline:install`.** Previously the preview path could resolve to a stale versioned cache; it now falls back to the version-stable marketplace clone path, matching the install wiring.
+- **`/craft-statusline:on` and `/craft-statusline:off` validate the field argument in bash.** A missing or unrecognized field now exits non-zero with the usage hint, instead of quietly writing an unknown option key into `settings.json`.
+- **`run_custom_field` now traps its tempfile cleanup.** Previously a stray tempfile could be left behind if the harness interrupted the renderer between `mktemp` and the explicit `rm`.
+- **Removed dead code `render_with_flags` from `tests/helpers.bash`.** Unused by any test.
+
 ## [2.0.2] -- 2026-04-23
 
 ### Fixed

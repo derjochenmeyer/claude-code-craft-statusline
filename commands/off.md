@@ -9,7 +9,7 @@ Disable one of the craft-statusline boolean options. The argument is the field n
 
 ## Valid arguments
 
-`model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `activity`, `color`
+`model`, `branch`, `context`, `context_alert`, `rate_limits`, `cost`, `color`
 
 ## Steps
 
@@ -19,10 +19,21 @@ Argument is `$ARGUMENTS`. If empty or not in the list above:
 
 ```
 Usage: /craft-statusline:off <field>
-Valid fields: model, branch, context, context_alert, rate_limits, cost, activity, color
+Valid fields: model, branch, context, context_alert, rate_limits, cost, color
 ```
 
 Stop.
+
+```bash
+case "$ARGUMENTS" in
+  model|branch|context|context_alert|rate_limits|cost|color) ;;
+  *)
+    echo "Usage: /craft-statusline:off <field>"
+    echo "Valid fields: model, branch, context, context_alert, rate_limits, cost, color"
+    exit 1
+    ;;
+esac
+```
 
 ### 2. Patch ~/.claude/settings.json
 

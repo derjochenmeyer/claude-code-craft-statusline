@@ -1,7 +1,7 @@
 {
   "name": "craft-statusline",
-  "version": "2.0.2",
-  "description": "A carefully crafted Claude Code statusline written in bash. Shows model, effort level, git branch (state-aware color palette), context window with absolute-token traffic light, rate limits, optional cost, and a hook-free activity indicator.",
+  "version": "3.0.0",
+  "description": "A carefully crafted Claude Code statusline written in bash. Shows model, effort level, git branch (state-aware color palette), context window with absolute-token traffic light, rate limits, and optional cost.",
   "author": {
     "name": "Jochen Meyer",
     "url": "https://x.com/derjochenmeyer"
@@ -9,7 +9,7 @@
   "homepage": "https://github.com/derjochenmeyer/claude-code-craft-statusline",
   "repository": "https://github.com/derjochenmeyer/claude-code-craft-statusline",
   "license": "MIT",
-  "keywords": ["statusline", "context", "rate-limits", "git", "activity", "bash"],
+  "keywords": ["statusline", "context", "rate-limits", "git", "bash"],
   "userConfig": {
     "show_model": {
       "type": "boolean",
@@ -44,14 +44,8 @@
     "show_cost": {
       "type": "boolean",
       "title": "Show session cost",
-      "description": "Display session cost in USD. API billing only — meaningless on flat-rate plans (Pro/Team/Max). Off by default.",
+      "description": "Display session cost in USD. API billing only, meaningless on flat-rate plans (Pro/Team/Max). Off by default.",
       "default": false
-    },
-    "show_activity": {
-      "type": "boolean",
-      "title": "Show activity indicator",
-      "description": "Display the hook-free indicator that shows whether Claude is thinking, executing a tool, or researching via a subagent.",
-      "default": true
     },
     "show_color": {
       "type": "boolean",
@@ -73,14 +67,6 @@
       "description": "Absolute token count at which the badge turns yellow. Reflects the zone where model recall measurably degrades on large-window models.",
       "default": 400000,
       "min": 1000
-    },
-    "activity_live_window_secs": {
-      "type": "number",
-      "title": "Activity stale window (seconds)",
-      "description": "Transcript mtime younger than this counts as active. Older means idle, indicator disappears. Default 60s covers most long tool calls without lingering after a turn ends.",
-      "default": 60,
-      "min": 1,
-      "max": 600
     }
   }
 }
