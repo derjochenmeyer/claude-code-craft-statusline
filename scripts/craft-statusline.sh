@@ -14,7 +14,7 @@
 #   --version   print version and exit
 #   --doctor    run environment checks and exit
 
-VERSION="2.0.1"
+VERSION="2.0.2"
 
 # Boolean coercion: anything except literal "true" → false.
 bool_opt() {
@@ -49,7 +49,7 @@ CONTEXT_DEGRADE_AT_TOKENS="${CLAUDE_PLUGIN_OPTION_CONTEXT_DEGRADE_AT_TOKENS:-400
 # NOTE: 400k reflects Anthropic's public MRCR v2 numbers for the Claude 4
 # family (roughly 15-17 pp accuracy drop between 256k and 1M).
 # Re-validate when new model generations ship.
-ACTIVITY_LIVE_WINDOW_SECS="${CLAUDE_PLUGIN_OPTION_ACTIVITY_LIVE_WINDOW_SECS:-10}"
+ACTIVITY_LIVE_WINDOW_SECS="${CLAUDE_PLUGIN_OPTION_ACTIVITY_LIVE_WINDOW_SECS:-60}"
 
 # ── Security bounds ──────────────────────────────────────────────
 # Hard caps on any user-influenced string we render. Defence-in-depth on
@@ -195,10 +195,18 @@ sep="${dim}│${rst}"
 
 # ── Session transcript discovery ─────────────────────────────────
 # Both the context field (for session duration) and the activity field
-# (for mtime-based "is Claude active" detection) need the path to the
-# most recently modified .jsonl transcript. Resolve it once here.
+# (for mtime-based "is Claude active" detection) need the path to this
+# session's .jsonl transcript. Prefer the harness-supplied transcript_path
+# from stdin (correct in multi-session setups); fall back to the most-
+# recently-modified jsonl across all projects only when the input lacks it.
 session_file=""
-if [[ -d "$HOME/.claude/projects" ]]; then
+if [[ -n "$input" ]]; then
+  candidate=$(echo "$input" | "$JQ" -r 'if (.transcript_path | type) == "string" then .transcript_path else empty end' 2>/dev/null)
+  if [[ -n "$candidate" && -r "$candidate" ]]; then
+    session_file="$candidate"
+  fi
+fi
+if [[ -z "$session_file" && -d "$HOME/.claude/projects" ]]; then
   session_file=$(find "$HOME/.claude/projects" -type f -name "*.jsonl" -print0 2>/dev/null \
                  | xargs -0 ls -t 2>/dev/null \
                  | head -1)

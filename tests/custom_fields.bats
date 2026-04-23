@@ -118,15 +118,32 @@ EOF
   [[ "$clean" != *"mcp__"* ]]
 }
 
-@test "activity hides when the transcript file is stale (>10s)" {
+@test "activity hides when the transcript file is stale (>60s)" {
   mkdir -p "$HOME/.claude/projects/test-session"
   jsonl="$HOME/.claude/projects/test-session/session.jsonl"
   echo '{"type":"assistant","message":{"content":[{"type":"text","text":"x"}]}}' > "$jsonl"
-  # Touch to 30 seconds ago
-  touch -t "$(date -v-30S +%Y%m%d%H%M.%S 2>/dev/null || date -d '30 seconds ago' +%Y%m%d%H%M.%S)" "$jsonl" 2>/dev/null || true
+  # Touch to 90 seconds ago (default window is 60s)
+  touch -t "$(date -v-90S +%Y%m%d%H%M.%S 2>/dev/null || date -d '90 seconds ago' +%Y%m%d%H%M.%S)" "$jsonl" 2>/dev/null || true
   run bash -c "echo '{}' | bash '$RENDERER'"
   clean=$(echo "$output" | strip_ansi)
   [[ "$clean" != *"●"* ]]
+}
+
+@test "activity reads transcript_path from stdin instead of the global latest jsonl" {
+  # Two sessions exist. The "other" one was written more recently. The
+  # renderer must follow the transcript_path in the input JSON, not the
+  # global mtime, otherwise multi-session setups show the wrong activity.
+  mkdir -p "$HOME/.claude/projects/mine" "$HOME/.claude/projects/other"
+  mine="$HOME/.claude/projects/mine/session.jsonl"
+  other="$HOME/.claude/projects/other/session.jsonl"
+  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash","input":{}}]}}' > "$mine"
+  echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Task","input":{}}]}}' > "$other"
+  # Make "other" newer than "mine" so the global-latest fallback would pick it.
+  touch "$other"
+  run bash -c "echo '{\"transcript_path\":\"$mine\"}' | bash '$RENDERER'"
+  clean=$(echo "$output" | strip_ansi)
+  [[ "$clean" == *"(Bash)"* ]]
+  [[ "$clean" != *"researching"* ]]
 }
 
 @test "activity hides when no projects directory exists" {

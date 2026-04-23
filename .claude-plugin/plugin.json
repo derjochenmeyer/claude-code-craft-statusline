@@ -1,6 +1,6 @@
 {
   "name": "craft-statusline",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A carefully crafted Claude Code statusline written in bash. Shows model, effort level, git branch (state-aware color palette), context window with absolute-token traffic light, rate limits, optional cost, and a hook-free activity indicator.",
   "author": {
     "name": "Jochen Meyer",
@@ -77,8 +77,8 @@
     "activity_live_window_secs": {
       "type": "number",
       "title": "Activity stale window (seconds)",
-      "description": "Transcript mtime younger than this counts as active. Older means idle, indicator disappears.",
-      "default": 10,
+      "description": "Transcript mtime younger than this counts as active. Older means idle, indicator disappears. Default 60s covers most long tool calls without lingering after a turn ends.",
+      "default": 60,
       "min": 1,
       "max": 600
     }

@@ -7,6 +7,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 Only user-facing code and feature changes are tracked: new fields, new flags, behavioural changes, bug fixes, removals, security fixes. README copy, screenshots, badges, internal refactors, and CI tweaks are intentionally left out, since git history covers them. If a change wouldn't show up in `--doctor` or in the rendered output, it doesn't belong here.
 
+## [2.0.2] -- 2026-04-23
+
+### Fixed
+- **Activity indicator now reads the correct session.** The renderer was picking the most-recently-modified `.jsonl` across all projects, so users with multiple parallel Claude Code sessions saw activity from a different session. It now follows the `transcript_path` field from the harness's stdin JSON and only falls back to the global-latest scan when that field is missing.
+- **Activity stale window raised from 10s to 60s.** A 10-second idle threshold was too aggressive for typical long tool calls (10s+ Bash, multi-step Task subagents), so the indicator vanished during the moments it was meant to be most visible. 60s covers common long tool calls while still disappearing within a sensible window after a turn ends. Configurable via `activity_live_window_secs`.
+
 ## [2.0.1] -- 2026-04-22
 
 ### Fixed

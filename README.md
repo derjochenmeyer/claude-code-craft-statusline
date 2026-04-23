@@ -2,7 +2,7 @@
 
 [![Anthropic](https://img.shields.io/badge/Anthropic-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.com/claude-code) [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-8B5CF6)](https://docs.claude.com/en/docs/claude-code/plugins)
 
-![Version](https://img.shields.io/badge/version-2.0.1-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
+![Version](https://img.shields.io/badge/version-2.0.2-blue) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL-lightgrey) ![Shell](https://img.shields.io/badge/shell-bash-green) ![Font](https://img.shields.io/badge/fonts-none%20required-brightgreen)
 
 A carefully crafted [Claude Code](https://docs.anthropic.com/en/docs/claude-code) statusline written in bash, distributed as an official Claude Code plugin. Shows model, effort level, git branch and status, session context, rate limits, session cost, and activity.
 
@@ -74,7 +74,7 @@ Defaults: `model + branch + context + context_alert + rate_limits + activity + c
 | Context | `ctx▸42% (2h34m)` | Context window usage and session age. Three-stage traffic light: green while tokens < `context_degrade_at_tokens` (default 400k); yellow `⚠` once absolute tokens cross that (model recall degrades noticeably on long contexts, regardless of how much headroom the 1M window still has); red `⚠` once percentage ≥ `context_alert_at` (default 85%) and auto-compact is imminent. |
 | Rate limits | `5h▸12% │ 7d▸8%` | Rolling token usage across the last 5 hours and 7 days. Color shifts from green to yellow to red as you approach limits, before you hit them, not after. |
 | Session cost | `cost▸0.43$` | **API billing only.** Session cost in USD at pay-per-token rates. On flat-rate plans (Pro, Team, Max) this is a hypothetical equivalent, not your actual invoice. Off by default. |
-| Activity indicator | `● thinking` / `● executing (Bash)` / `● researching` | What Claude is doing right now. Hook-free: driven by the mtime and last `assistant` event of the active session transcript. Shows `thinking` (Claude generating text), `executing (Tool)` (Claude calling a tool), or `researching` (Claude dispatched a subagent). Disappears when the transcript has been idle for 10 seconds. |
+| Activity indicator | `● thinking` / `● executing (Bash)` / `● researching` | What Claude is doing right now. Hook-free: driven by the mtime and last `assistant` event of the active session transcript. Shows `thinking` (Claude generating text), `executing (Tool)` (Claude calling a tool), or `researching` (Claude dispatched a subagent). Disappears when the transcript has been idle for 60 seconds (configurable via `activity_live_window_secs`). |
 
 ### A note on `cost` and flat-rate plans
 
