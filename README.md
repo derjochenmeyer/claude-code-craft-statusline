@@ -19,6 +19,7 @@ The context field uses a traffic light that leans on absolute tokens, not percen
 ```
 /plugin marketplace add derjochenmeyer/claude-code-craft-statusline
 /plugin install craft-statusline
+/reload-plugins
 /craft-statusline:install
 ```
 
@@ -28,7 +29,8 @@ Restart Claude Code (or open a new session) to see the statusline render at the 
 
 1. **`/plugin marketplace add …`** registers this repo's marketplace with Claude Code so it knows where to fetch the plugin from.
 2. **`/plugin install craft-statusline`** downloads the plugin into Claude Code's local plugin directory and enables it.
-3. **`/craft-statusline:install`** writes a `statusLine` block into `~/.claude/settings.json` pointing at the plugin's renderer. The slash command checks `jq` is on PATH first and refuses to overwrite an existing different statusLine without `force`.
+3. **`/reload-plugins`** picks up the plugin's slash commands without a full restart. Without this step, `/craft-statusline:install` is not yet discoverable in the current session.
+4. **`/craft-statusline:install`** writes a `statusLine` block into `~/.claude/settings.json` pointing at the plugin's renderer. The slash command checks `jq` is on PATH first and refuses to overwrite an existing different statusLine without `force`.
 
 > **Why the `command` line looks the way it does (`${CLAUDE_PLUGIN_ROOT:-…}`)**
 >
