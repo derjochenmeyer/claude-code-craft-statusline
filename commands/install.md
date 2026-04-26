@@ -47,9 +47,9 @@ Outcomes:
 
 ## Step 3: Write settings.json
 
-**CRITICAL:** Write the literal string `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh` into `settings.json`. Do NOT substitute the variable references with the expanded absolute path you may see in the rendered version of this skill. Both tokens must survive into the JSON verbatim so the line keeps working across plugin updates and across the upstream `${CLAUDE_PLUGIN_ROOT}` expansion bug ([anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079)).
+**CRITICAL:** Write the literal string `${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh` into `settings.json`. Do NOT substitute the variable references with the expanded absolute path you may see in the rendered version of this skill. Both tokens must survive into the JSON verbatim so the line keeps working across plugin updates.
 
-Pattern explained: Claude Code's status-line subprocess does not currently populate `${CLAUDE_PLUGIN_ROOT}`, so a bare reference to it expands to the empty string and the renderer is never reached. The POSIX default-expansion `${CLAUDE_PLUGIN_ROOT:-…}` falls back to the marketplace clone path, which is version-stable. Once the upstream bug is fixed, the same line transparently switches back to the official plugin root with no further action needed.
+Pattern explained: Claude Code's statusline lives in `settings.json` outside the plugin system, so the statusline subprocess does not receive `${CLAUDE_PLUGIN_ROOT}`. This is expected behaviour, not a bug, and was confirmed by Anthropic in [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079) (closed as "expected existing behavior"). The POSIX default-expansion `${CLAUDE_PLUGIN_ROOT:-…}` falls back to the marketplace clone path, which is version-stable. If Anthropic later integrates statusline into the plugin system, the same line will transparently pick up the official plugin root with no further action.
 
 Use this jq invocation. The single-quoted filter prevents shell expansion of `$CLAUDE_PLUGIN_ROOT` and `$HOME`, so both literal tokens survive into the JSON:
 

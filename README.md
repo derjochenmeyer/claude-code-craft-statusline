@@ -34,7 +34,7 @@ Restart Claude Code (or open a new session) to see the statusline render at the 
 
 > **Why the `command` line looks the way it does (`${CLAUDE_PLUGIN_ROOT:-…}`)**
 >
-> Claude Code currently does not populate `${CLAUDE_PLUGIN_ROOT}` for the statusline subprocess (it does for hooks, MCP, LSP, and monitors). Reported upstream as [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079). Until it's fixed, `/craft-statusline:install` writes a POSIX default-expansion that falls back to the version-stable marketplace clone path. Once the upstream bug is fixed, the same line transparently uses the official plugin root with no further action.
+> Claude Code's statusline lives in `settings.json` outside the plugin system, so `${CLAUDE_PLUGIN_ROOT}` is not populated in the statusline subprocess. This is expected behaviour, confirmed by Anthropic in [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079) (closed as "expected existing behavior"). To bridge the gap, `/craft-statusline:install` writes a POSIX default-expansion that falls back to the version-stable marketplace clone path. If Anthropic later integrates statusline into the plugin system, the same line will transparently pick up the official plugin root with no further action.
 
 ### Requirements
 

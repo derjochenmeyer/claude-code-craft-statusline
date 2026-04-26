@@ -42,7 +42,7 @@ echo '{"model":{"display_name":"Sonnet 4.6"},"context_window":{"used_percentage"
   | bash "${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh"
 ```
 
-The `${CLAUDE_PLUGIN_ROOT:-...}` fallback mirrors the pattern in `commands/install.md` and works around [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079). Remove the fallback here once the upstream fix ships.
+The `${CLAUDE_PLUGIN_ROOT:-...}` fallback mirrors the pattern in `commands/install.md`. Statusline lives outside the plugin system, so the variable is not populated in the statusline subprocess (expected behaviour per [anthropics/claude-code#52079](https://github.com/anthropics/claude-code/issues/52079), closed as "expected existing behavior"). The fallback path resolves to the version-stable marketplace clone.
 
 ### 4. Report active settings.json wiring
 

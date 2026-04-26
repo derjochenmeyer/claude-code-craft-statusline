@@ -167,12 +167,13 @@ teardown() {
   [[ "$ver_m" == "$ver_p" ]]
 }
 
-@test "install.md keeps the CLAUDE_PLUGIN_ROOT default-expansion (anthropics/claude-code#52079 workaround)" {
-  # Claude Code does not currently set ${CLAUDE_PLUGIN_ROOT} in the statusLine
-  # subprocess. While the upstream issue is open, install.md must write a POSIX
-  # default-expansion so the statusline resolves via the marketplace clone path
-  # when the variable is missing. Once the upstream fix lands, drop this test
-  # together with the workaround.
+@test "install.md keeps the CLAUDE_PLUGIN_ROOT default-expansion (anthropics/claude-code#52079, expected behaviour)" {
+  # Claude Code's statusline lives in settings.json outside the plugin system,
+  # so ${CLAUDE_PLUGIN_ROOT} is not populated in the statusline subprocess.
+  # Anthropic confirmed this as expected behaviour and closed #52079 accordingly.
+  # install.md must therefore write a POSIX default-expansion so the statusline
+  # resolves via the marketplace clone path. Drop this test only if Anthropic
+  # later integrates statusline into the plugin system and the fallback can go.
   pattern='${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/marketplaces/craft-statusline-marketplace}/scripts/craft-statusline.sh'
   grep -F "$pattern" "$PROJECT_ROOT/commands/install.md" >/dev/null
 }
